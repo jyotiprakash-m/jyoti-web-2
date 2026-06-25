@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import Head from "next/head";
+import Image from "next/image";
 import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -22,8 +23,8 @@ const RESUME = {
   name: "Jyoti Prakash Mohanta", title: "Full Stack Developer",
   location: "Saket, Delhi, India", phone: "+91 8658963394",
   email: "jyotiprakashmohanta32@gmail.com",
-  linkedin: "linkedin.com/in/jyoti-prakash-mohanta",
-  github: "github.com/jyotiprakashmohanta",
+  linkedin: "linkedin.com/in/jyotiprakash-m",
+  github: "github.com/jyotiprakash-m",
   summary: "Results-driven Full Stack Developer with 4 years of experience building web applications from idea to deployment. Creates fast, reliable, and user-friendly solutions using Next.js, scalable database design, and strong backend systems. Known for staying calm under pressure and resolving production issues quickly. Passionate about turning complex client requirements into simple, practical technology solutions that help businesses grow.",
   skills: {
     languages: ["Node.js", "Python", "TypeScript", "JavaScript"],
@@ -244,8 +245,8 @@ function HeroSection() {
           <span className="flex items-center gap-2"><MapPin className="w-4 h-4" /><span className="text-sm">{RESUME.location}</span></span>
         </div>
         <div className="flex justify-center gap-4 mt-8">
-          <a href={`https://${RESUME.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-110"><Link2 className="w-5 h-5 text-slate-300 hover:text-indigo-400" /></a>
-          <a href={`https://${RESUME.github}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-violet-500/20 hover:border-violet-500/40 transition-all duration-300 hover:scale-110"><GitCompareArrows className="w-5 h-5 text-slate-300 hover:text-violet-400" /></a>
+          <a href={`https://${RESUME.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-110"><Image src="/linkedin1.png" alt="LinkedIn" width={20} height={20} className="brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" /></a>
+          <a href={`https://${RESUME.github}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-violet-500/20 hover:border-violet-500/40 transition-all duration-300 hover:scale-110"><Image src="/github.png" alt="GitHub" width={20} height={20} className="brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" /></a>
         </div>
       </div>
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce"><ChevronDown className="w-6 h-6 text-slate-500" /></div>
@@ -423,8 +424,8 @@ function ContactSection() {
             <GlassCard className="p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Social Links</h3>
               <div className="flex gap-3">
-                <a href={`https://${RESUME.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-110"><Link2 className="w-5 h-5 text-slate-300 hover:text-indigo-400" /></a>
-                <a href={`https://${RESUME.github}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-violet-500/20 hover:border-violet-500/40 transition-all duration-300 hover:scale-110"><GitCompareArrows className="w-5 h-5 text-slate-300 hover:text-violet-400" /></a>
+                <a href={`https://${RESUME.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-110"><Image src="/linkedin.png" alt="LinkedIn" width={20} height={20} className="brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" /></a>
+                <a href={`https://${RESUME.github}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-violet-500/20 hover:border-violet-500/40 transition-all duration-300 hover:scale-110"><Image src="/github.png" alt="GitHub" width={20} height={20} className="brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" /></a>
               </div>
             </GlassCard>
           </div>
