@@ -45,28 +45,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to send notification email" }, { status: 500 });
     }
 
-    // 2. Send auto-reply to the user
-    const replyRes = await fetch(EMAILJS_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        service_id: SERVICE_ID,
-        template_id: AUTOREPLY_TEMPLATE_ID,
-        user_id: PUBLIC_KEY,
-        accessToken: PRIVATE_KEY,
-        template_params: {
-          from_name,
-          from_email,
-          email: from_email,
-        },
-      }),
-    });
+    // 2. Auto-reply to the user (commented out — EmailJS free plan only sends to verified emails)
+    // const replyRes = await fetch(EMAILJS_API, {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     service_id: SERVICE_ID,
+    //     template_id: AUTOREPLY_TEMPLATE_ID,
+    //     user_id: PUBLIC_KEY,
+    //     accessToken: PRIVATE_KEY,
+    //     template_params: {
+    //       from_name,
+    //       from_email,
+    //       email: from_email,
+    //     },
+    //   }),
+    // });
 
-    if (!replyRes.ok) {
-      const err = await replyRes.text();
-      console.error("Auto-reply email failed:", err);
-      // Don't fail the whole request if auto-reply fails
-    }
+    // if (!replyRes.ok) {
+    //   const err = await replyRes.text();
+    //   console.error("Auto-reply email failed:", err);
+    // }  // Don't fail the whole request if auto-reply fails
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
