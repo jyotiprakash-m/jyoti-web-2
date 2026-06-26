@@ -1,19 +1,51 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import Head from "next/head";
-import Image from "next/image";
-import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  Mail, Phone, MapPin, Link2, GitCompareArrows, ExternalLink, Code2, Database,
-  Brain, Cloud, Blocks, ChevronDown, Award, Briefcase, GraduationCap,
-  FolderOpen, Sparkles, Cpu, Globe, Zap, Layers, Terminal, Server,
-  Send, MessageSquare, Bot, FileText, TrendingUp, Shield, Headphones,
-  Search, Stethoscope, BookOpen, Wallet, Tractor, BarChart3, PieChart,
-  CheckCircle2, X, Menu,
+  Award,
+  BarChart3,
+  Blocks,
+  BookOpen,
+  Bot,
+  Brain,
+  Briefcase,
+  CheckCircle2,
+  ChevronDown,
+  Cloud,
+  Code2,
+  Cpu,
+  Database,
+  ExternalLink,
+  FileText,
+  FolderOpen,
+  Globe,
+  GraduationCap,
+  Headphones,
+  Layers,
+  Mail,
+  MapPin,
+  Menu,
+  MessageSquare,
+  Phone,
+  PieChart,
+  Search,
+  Send,
+  Server,
+  Shield,
+  Sparkles,
+  Stethoscope,
+  Terminal,
+  Tractor,
+  TrendingUp,
+  Wallet,
+  X,
+  Zap
 } from "lucide-react";
+import Head from "next/head";
+import Image from "next/image";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -197,10 +229,10 @@ function HeroScene() {
     const lineGeo = new THREE.BufferGeometry(); lineGeo.setAttribute("position", new THREE.Float32BufferAttribute(linePositions, 3));
     const lines = new THREE.LineSegments(lineGeo, lineMat); scene.add(lines);
 
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
-      const time = clock.getElapsedTime();
+      const time = (performance.now() - startTime) / 1000;
       particles.rotation.y = time * 0.05; particles.rotation.x = Math.sin(time * 0.03) * 0.1;
       shapes.forEach((shape) => { const ud = (shape as any).userData; shape.rotation.x += ud.rotSpeed.x; shape.rotation.y += ud.rotSpeed.y; shape.rotation.z += ud.rotSpeed.z; shape.position.y = ud.baseY + Math.sin(time * ud.floatSpeed + ud.floatOffset) * 2; });
       textGroup.rotation.y = time * 0.1; textGroup.rotation.x = Math.sin(time * 0.2) * 0.1;
@@ -254,13 +286,118 @@ function HeroSection() {
   );
 }
 
+function BackgroundScene({ variant }: { variant: "about" | "skills" | "experience" | "projects" | "education" | "contact" }) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<number>(0);
+  const isVisible = useRef(false);
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    const w = mount.offsetWidth, h = mount.offsetHeight;
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0f0f1a, 0.002);
+    const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
+    camera.position.z = 30;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(w, h); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x0f0f1a, 0); mount.appendChild(renderer.domElement);
+
+    const objects: any[] = [];
+    if (variant === "about") {
+      const geo = new THREE.IcosahedronGeometry(0.8, 0);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x8b5cf6, wireframe: true, transparent: true, opacity: 0.15 });
+      for (let i = 0; i < 30; i++) {
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = (i - 15) * 2; mesh.position.x = Math.sin(i * 0.5) * 8; mesh.position.z = Math.cos(i * 0.5) * 8;
+        scene.add(mesh); objects.push({ mesh, type: "dna", offset: i });
+      }
+    } else if (variant === "skills") {
+      const geo = new THREE.OctahedronGeometry(1.5, 0);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.15 });
+      for (let i = 0; i < 20; i++) {
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, (Math.random() - 0.5) * 30);
+        scene.add(mesh); objects.push({ mesh, type: "float", rotX: Math.random() * 0.02, rotY: Math.random() * 0.02 });
+      }
+    } else if (variant === "experience") {
+      const coreGeo = new THREE.SphereGeometry(12, 16, 16);
+      const coreMat = new THREE.MeshBasicMaterial({ color: 0x6366f1, wireframe: true, transparent: true, opacity: 0.08 });
+      const core = new THREE.Mesh(coreGeo, coreMat);
+      scene.add(core); objects.push({ mesh: core, type: "coreGlobe" });
+
+      const satelliteGeo = new THREE.OctahedronGeometry(1.5, 0);
+      const satelliteMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.2 });
+      for (let i = 0; i < 15; i++) {
+        const mesh = new THREE.Mesh(satelliteGeo, satelliteMat);
+        scene.add(mesh); objects.push({ mesh, type: "satellite", angle: (i / 15) * Math.PI * 2, radius: 18 + Math.random() * 8, speed: 0.1 + Math.random() * 0.2, yOffset: (Math.random() - 0.5) * 20 });
+      }
+    } else if (variant === "projects") {
+      const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xa855f7, wireframe: true, transparent: true, opacity: 0.15 });
+      for (let x = -2; x <= 2; x++) {
+        for (let y = -2; y <= 2; y++) {
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(x * 12, y * 12, -15);
+          scene.add(mesh); objects.push({ mesh, type: "grid", baseX: mesh.position.x, baseY: mesh.position.y });
+        }
+      }
+    } else if (variant === "education") {
+      const geo = new THREE.TorusKnotGeometry(10, 2, 100, 16);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.1 });
+      const mesh = new THREE.Mesh(geo, mat);
+      scene.add(mesh); objects.push({ mesh, type: "core" });
+    } else if (variant === "contact") {
+      const particleGeo = new THREE.BufferGeometry();
+      const pos = new Float32Array(800 * 3);
+      for (let i = 0; i < 800; i++) {
+        pos[i * 3] = (Math.random() - 0.5) * 80; pos[i * 3 + 1] = (Math.random() - 0.5) * 80; pos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+      }
+      particleGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      const particleMat = new THREE.PointsMaterial({ color: 0x6366f1, size: 0.3, transparent: true, opacity: 0.4 });
+      const particles = new THREE.Points(particleGeo, particleMat);
+      scene.add(particles); objects.push({ mesh: particles, type: "particles" });
+    }
+
+    const startTime = performance.now();
+    const animate = () => {
+      frameRef.current = requestAnimationFrame(animate);
+      if (!isVisible.current) return;
+      const time = (performance.now() - startTime) / 1000;
+      objects.forEach((obj) => {
+        if (obj.type === "dna") { obj.mesh.rotation.y = time * 0.3 + obj.offset * 0.1; }
+        else if (obj.type === "float") { obj.mesh.rotation.x += obj.rotX; obj.mesh.rotation.y += obj.rotY; obj.mesh.position.y += Math.sin(time + obj.rotX * 100) * 0.02; }
+        else if (obj.type === "coreGlobe") { obj.mesh.rotation.y = time * 0.1; obj.mesh.rotation.x = time * 0.05; }
+        else if (obj.type === "satellite") {
+          obj.mesh.position.x = Math.cos(time * obj.speed + obj.angle) * obj.radius;
+          obj.mesh.position.z = Math.sin(time * obj.speed + obj.angle) * obj.radius;
+          obj.mesh.position.y = obj.yOffset + Math.sin(time * obj.speed) * 4;
+          obj.mesh.rotation.x += 0.01; obj.mesh.rotation.y += 0.02;
+        }
+        else if (obj.type === "grid") { obj.mesh.position.z = Math.sin(time + obj.baseX + obj.baseY) * 5 - 15; obj.mesh.rotation.x = time * 0.2; obj.mesh.rotation.y = time * 0.2; }
+        else if (obj.type === "core") { obj.mesh.rotation.x = time * 0.1; obj.mesh.rotation.y = time * 0.15; }
+        else if (obj.type === "particles") { obj.mesh.rotation.y = time * 0.05; obj.mesh.rotation.x = Math.sin(time * 0.1) * 0.05; }
+      });
+      renderer.render(scene, camera);
+    }; animate();
+
+    const observer = new IntersectionObserver((entries) => { isVisible.current = entries[0].isIntersecting; }, { threshold: 0 });
+    observer.observe(mount);
+    const handleResize = () => { const newW = mount.offsetWidth, newH = mount.offsetHeight; camera.aspect = newW / newH; camera.updateProjectionMatrix(); renderer.setSize(newW, newH); };
+    window.addEventListener("resize", handleResize);
+    return () => { cancelAnimationFrame(frameRef.current); observer.disconnect(); window.removeEventListener("resize", handleResize); renderer.dispose(); if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement); };
+  }, [variant]);
+  return <div ref={mountRef} className="absolute inset-0 z-0 pointer-events-none opacity-60" />;
+}
+
 function AboutSection() {
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => { if (!sectionRef.current) return; const els = sectionRef.current.querySelectorAll(".animate-in"); gsap.fromTo(els, { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out", scrollTrigger: { trigger: sectionRef.current, start: "top 70%" } }); }, []);
   const stats = [{ label: "Years Experience", value: "4+", icon: Briefcase }, { label: "Projects Built", value: "16+", icon: FolderOpen }, { label: "Enterprise Clients", value: "7+", icon: Globe }, { label: "AI/LLM Projects", value: "10+", icon: Brain }];
   return (
-    <section ref={sectionRef} id="about" className="py-24 px-4 relative">
-      <div className="max-w-6xl mx-auto">
+    <section ref={sectionRef} id="about" className="py-24 px-4 relative overflow-hidden">
+      <BackgroundScene variant="about" />
+      <div className="max-w-6xl mx-auto relative z-10">
         <SectionTitle icon={Sparkles} title="About Me" subtitle="Passionate about building scalable, intelligent, and beautiful web applications" />
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="animate-in">
@@ -299,8 +436,9 @@ function SkillsSection() {
   };
   useEffect(() => { if (!sectionRef.current) return; const els = sectionRef.current.querySelectorAll(".animate-in"); gsap.fromTo(els, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: "power3.out", scrollTrigger: { trigger: sectionRef.current, start: "top 70%" } }); }, [activeCategory]);
   return (
-    <section ref={sectionRef} id="skills" className="py-24 px-4 relative">
-      <div className="max-w-6xl mx-auto">
+    <section ref={sectionRef} id="skills" className="py-24 px-4 relative overflow-hidden">
+      <BackgroundScene variant="skills" />
+      <div className="max-w-6xl mx-auto relative z-10">
         <SectionTitle icon={Cpu} title="Skills & Expertise" subtitle="Comprehensive tech stack spanning frontend, backend, AI, and blockchain" />
         <div className="animate-in flex flex-wrap justify-center gap-2 mb-12">
           {categories.map((cat) => { const IconComp = cat.icon; return <button key={cat.key} onClick={() => setActiveCategory(cat.key)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${activeCategory === cat.key ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]" : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-white"}`}><IconComp className="w-4 h-4" />{cat.label}</button>; })}
@@ -326,8 +464,9 @@ function ExperienceSection() {
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => { if (!sectionRef.current) return; const cards = sectionRef.current.querySelectorAll(".exp-card"); gsap.fromTo(cards, { x: -60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.8, stagger: 0.2, ease: "power3.out", scrollTrigger: { trigger: sectionRef.current, start: "top 70%" } }); }, []);
   return (
-    <section ref={sectionRef} id="experience" className="py-24 px-4 relative">
-      <div className="max-w-6xl mx-auto">
+    <section ref={sectionRef} id="experience" className="py-24 px-4 relative overflow-hidden">
+      <BackgroundScene variant="experience" />
+      <div className="max-w-6xl mx-auto relative z-10">
         <SectionTitle icon={Briefcase} title="Work Experience" subtitle="Professional journey building enterprise-grade applications" />
         <div className="relative">
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500 via-violet-500 to-transparent" />
@@ -360,8 +499,9 @@ function ProjectsSection() {
   }, [filter]);
   useEffect(() => { if (!sectionRef.current) return; const cards = sectionRef.current.querySelectorAll(".project-card"); gsap.fromTo(cards, { y: 60, opacity: 0, scale: 0.95 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, stagger: 0.08, ease: "power3.out", scrollTrigger: { trigger: sectionRef.current, start: "top 70%" } }); }, [filter]);
   return (
-    <section ref={sectionRef} id="projects" className="py-24 px-4 relative">
-      <div className="max-w-7xl mx-auto">
+    <section ref={sectionRef} id="projects" className="py-24 px-4 relative overflow-hidden">
+      <BackgroundScene variant="projects" />
+      <div className="max-w-7xl mx-auto relative z-10">
         <SectionTitle icon={FolderOpen} title="Projects" subtitle="16+ production-ready applications spanning AI, blockchain, and enterprise solutions" />
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           {filters.map((f) => { const IconComp = f.icon; return <button key={f.key} onClick={() => setFilter(f.key)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${filter === f.key ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]" : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-white"}`}><IconComp className="w-4 h-4" />{f.label}</button>; })}
@@ -383,8 +523,9 @@ function EducationSection() {
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => { if (!sectionRef.current) return; const cards = sectionRef.current.querySelectorAll(".edu-card"); gsap.fromTo(cards, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.15, ease: "power3.out", scrollTrigger: { trigger: sectionRef.current, start: "top 75%" } }); }, []);
   return (
-    <section ref={sectionRef} id="education" className="py-24 px-4 relative">
-      <div className="max-w-6xl mx-auto">
+    <section ref={sectionRef} id="education" className="py-24 px-4 relative overflow-hidden">
+      <BackgroundScene variant="education" />
+      <div className="max-w-6xl mx-auto relative z-10">
         <SectionTitle icon={GraduationCap} title="Education & Certifications" subtitle="Academic foundation and professional certifications" />
         <div className="grid md:grid-cols-2 gap-8">
           <div className="edu-card"><GlassCard className="p-8">
@@ -404,12 +545,45 @@ function EducationSection() {
 function ContactSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [formState, setFormState] = useState({ name: "", email: "", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(false);
+
   useEffect(() => { if (!sectionRef.current) return; const els = sectionRef.current.querySelectorAll(".animate-in"); gsap.fromTo(els, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power3.out", scrollTrigger: { trigger: sectionRef.current, start: "top 75%" } }); }, []);
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); setSubmitted(true); setTimeout(() => setSubmitted(false), 3000); };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(false);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from_name: formState.name,
+          from_email: formState.email,
+          message: formState.message,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send");
+
+      setSubmitted(true);
+      setFormState({ name: "", email: "", message: "" });
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (err) {
+      console.error("Failed to send email:", err);
+      setError(true);
+      setTimeout(() => setError(false), 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <section ref={sectionRef} id="contact" className="py-24 px-4 relative">
-      <div className="max-w-4xl mx-auto">
+    <section ref={sectionRef} id="contact" className="py-24 px-4 relative overflow-hidden">
+      <BackgroundScene variant="contact" />
+      <div className="max-w-4xl mx-auto relative z-10">
         <SectionTitle icon={Send} title="Get In Touch" subtitle="Let's build something amazing together" />
         <div className="grid md:grid-cols-2 gap-8">
           <div className="animate-in space-y-6">
@@ -424,7 +598,7 @@ function ContactSection() {
             <GlassCard className="p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Social Links</h3>
               <div className="flex gap-3">
-                <a href={`https://${RESUME.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-110"><Image src="/linkedin.png" alt="LinkedIn" width={20} height={20} className="brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" /></a>
+                <a href={`https://${RESUME.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 hover:scale-110"><Image src="/linkedin1.png" alt="LinkedIn" width={20} height={20} className="brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" /></a>
                 <a href={`https://${RESUME.github}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-violet-500/20 hover:border-violet-500/40 transition-all duration-300 hover:scale-110"><Image src="/github.png" alt="GitHub" width={20} height={20} className="brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" /></a>
               </div>
             </GlassCard>
@@ -435,7 +609,9 @@ function ContactSection() {
                 <div><label className="block text-sm text-slate-400 mb-1">Name</label><input type="text" value={formState.name} onChange={(e) => setFormState({ ...formState, name: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all" placeholder="Your name" required /></div>
                 <div><label className="block text-sm text-slate-400 mb-1">Email</label><input type="email" value={formState.email} onChange={(e) => setFormState({ ...formState, email: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all" placeholder="your@email.com" required /></div>
                 <div><label className="block text-sm text-slate-400 mb-1">Message</label><textarea value={formState.message} onChange={(e) => setFormState({ ...formState, message: e.target.value })} rows={4} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)] transition-all resize-none" placeholder="Tell me about your project..." required /></div>
-                <button type="submit" className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2">{submitted ? <><CheckCircle2 className="w-5 h-5" />Message Sent!</> : <><Send className="w-5 h-5" />Send Message</>}</button>
+                <button type="submit" disabled={isSubmitting} className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed">
+                  {isSubmitting ? "Sending..." : submitted ? <><CheckCircle2 className="w-5 h-5" />Message Sent!</> : error ? "Failed to send" : <><Send className="w-5 h-5" />Send Message</>}
+                </button>
               </form>
             </GlassCard>
           </div>
