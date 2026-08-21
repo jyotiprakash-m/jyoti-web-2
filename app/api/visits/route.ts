@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-
-const dataFilePath = path.join(process.cwd(), "data", "visits.json");
+import { kv } from "@vercel/kv";
 
 export async function GET() {
   try {
-    // Read the current count
-    const fileData = fs.readFileSync(dataFilePath, "utf8");
-    const data = JSON.parse(fileData);
+    // Increment the 'portfolio_visits' key by 1 in Vercel KV
+    const count = await kv.incr("portfolio_visits");
     
-    // Increment the count
-    data.count = (data.count || 0) + 1;
-    
-    // Write the new count back to the file
-    fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2), "utf8");
-    
-    return NextResponse.json({ count: data.count });
+    return NextResponse.json({ count });
   } catch (error) {
-    console.error("Error reading/writing visits.json", error);
+    console.error("Error connecting to Vercel KV", error);
+    // Return a fallback count if KV fails
     return NextResponse.json({ count: 0 }, { status: 500 });
   }
 }
