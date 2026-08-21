@@ -511,7 +511,7 @@ function ProjectsSection() {
           {filteredProjects.map((project) => { const IconComp = ICON_MAP[project.icon] || Code2; return <TiltCard key={project.name} className="project-card"><GlassCard className="h-full flex flex-col p-6">
             <div className="flex items-center gap-3 mb-4"><div className="p-3 rounded-xl" style={{ backgroundColor: `${project.color}15`, border: `1px solid ${project.color}30` }}><IconComp className="w-6 h-6" style={{ color: project.color }} /></div><h3 className="text-lg font-bold text-white">{project.name}</h3></div>
             <p className="text-slate-400 text-sm mb-4 flex-grow">{project.desc}</p>
-            <div className="flex flex-wrap gap-1.5 mb-4">{project.tech.slice(0, 5).map((t) => <span key={t} className="px-2 py-0.5 rounded-md text-xs bg-white/5 text-slate-400 border border-white/5">{t}</span>)}{project.tech.length > 5 && <span className="px-2 py-0.5 rounded-md text-xs text-slate-500">+{project.tech.length - 5}</span>}</div>
+            <div className="flex flex-wrap gap-1.5 mb-4">{project.tech.map((t) => <span key={t} className="px-2 py-0.5 rounded-md text-xs bg-white/5 text-slate-400 border border-white/5">{t}</span>)}</div>
             <div className="flex gap-2">
               {((project as any).github || (project as any).frontend) && (
                 <div className="flex flex-1 gap-2">
