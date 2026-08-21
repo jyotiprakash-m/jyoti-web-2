@@ -70,16 +70,16 @@ const RESUME = {
   },
   experience: [
     {
-      company: "Quadcentrix (SettleMint India)", role: "Full Stack Developer", period: "Jan 2023 – Present", location: "New Delhi",
+      company: "Quadcentrix (SettleMint India)", role: "Full Stack AI Developer", period: "Jan 2023 – Present", location: "New Delhi",
       highlights: [
-        "Boosted development speed by 30% through workflow optimization",
-        "Integrated ERC-20 & ERC-1155 smart contracts into Next.js apps",
-        "Built 5 scalable microservices using NestJS, ORM & GraphQL",
-        "Delivered enterprise projects for SBI, Sony Bank, Kawasaki, DRDO, Adani Defence",
-        "Implemented MySQL stored procedures as APIs in Node.js/Next.js",
-        "Improved performance, SEO, accessibility across all projects",
+        "Architected and deployed 10+ AI-native microservices using FastAPI, LangGraph, and CrewAI, reducing manual operational tasks by 40%",
+        "Designed high-performance multi-tenant RAG systems utilizing Vector DBs and OpenAI to process over 50,000+ documents securely",
+        "Built 5 highly scalable backend microservices using NestJS, GraphQL, and ORMs, handling 100k+ daily API requests",
+        "Delivered complex enterprise AI & Blockchain projects for Tier-1 clients including SBI, Sony Bank, Kawasaki, DRDO, and Adani Defence",
+        "Integrated ERC-20 & ERC-1155 smart contracts into robust Next.js frontend applications",
+        "Boosted overall development speed by 30% through workflow optimization and integrating AI-driven autonomous engineering tools",
       ],
-      tags: ["Next.js", "NestJS", "Blockchain", "AI/LLM", "Microservices"],
+      tags: ["Next.js", "FastAPI", "AI/LLM", "Microservices", "Blockchain", "LangGraph", "RAG"],
     },
     {
       company: "Publicis Sapient", role: "Junior Associate Technology", period: "May 2022 – Dec 2022", location: "Remote",
@@ -93,7 +93,7 @@ const RESUME = {
   ],
   education: [{ degree: "B.Tech in Computer Science & Engineering", school: "C.V. Raman Global University, Bhubaneswar", period: "June 2018 – June 2022" }],
   certificates: [
-    { name: "Microsoft Certified: Azure AI Engineer Associate", id: "879CCF5B665E7269", issued: "Jul 2025", expires: "Jul 2026" },
+    { name: "Microsoft Certified: Azure AI Engineer Associate", id: "879CCF5B665E7269", issued: "Jul 2025", expires: "Jul 2027" },
     { name: "AI Engineer Agentic Track — Agent & MCP Course", id: "UC-e13f52b3-237e-474d-a189-478a7c075aa0", issued: "2025" },
   ],
   projects: [

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 
 const SITE_URL = "https://jyotidev.in";
 const FULL_NAME = "Jyoti Prakash Mohanta";
-const TITLE = `${FULL_NAME} | Full Stack Developer & AI Engineer`;
+const TITLE = `${FULL_NAME} | Full Stack AI Developer & Software Engineer`;
 const DESCRIPTION =
-  "Portfolio of Jyoti Prakash Mohanta — Full Stack Developer with 4+ years of experience in Next.js, AI/LLM, Blockchain, NestJS, FastAPI, and scalable backend systems. Building enterprise-grade web applications for clients like SBI, Sony Bank, Kawasaki, DRDO & Adani Defence.";
+  "Portfolio of Jyoti Prakash Mohanta — Full Stack AI Developer with 4+ years of experience building AI-native microservices, scalable backend systems, and enterprise web applications. Expert in Next.js, FastAPI, LLMs, LangGraph, RAG, and Blockchain. Trusted by tier-1 clients like SBI, Sony Bank, DRDO, and Adani Defence.";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -33,24 +33,25 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   keywords: [
     "Jyoti Prakash Mohanta",
-    "Full Stack Developer",
-    "AI Engineer",
+    "Full Stack AI Developer",
+    "AI Software Engineer",
     "Next.js Developer",
-    "React Developer",
-    "Node.js Developer",
+    "FastAPI Developer",
     "Python Developer",
+    "Node.js Developer",
     "Blockchain Developer",
-    "NestJS",
-    "FastAPI",
+    "AI-Native Microservices",
     "LLM Integration",
     "GenAI",
     "LangGraph",
     "CrewAI",
+    "RAG Systems",
     "OpenAI Agents",
-    "RAG",
-    "MCP",
+    "NestJS",
+    "PostgreSQL",
+    "AWS",
     "Web Developer Delhi",
-    "Portfolio",
+    "Enterprise Applications",
   ],
   authors: [{ name: FULL_NAME, url: SITE_URL }],
   creator: FULL_NAME,
@@ -115,12 +116,21 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: FULL_NAME,
-  jobTitle: "Full Stack Developer",
+  jobTitle: "Full Stack AI Developer",
   url: SITE_URL,
+  description: DESCRIPTION,
   sameAs: [
     "https://linkedin.com/in/jyotiprakash-m",
     "https://github.com/jyotiprakash-m",
   ],
+  alumniOf: {
+    "@type": "CollegeOrUniversity",
+    name: "C.V. Raman Global University",
+  },
+  worksFor: {
+    "@type": "Organization",
+    name: "Quadcentrix",
+  },
   address: {
     "@type": "PostalAddress",
     addressLocality: "Saket",
