@@ -1,15 +1,34 @@
 import { NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
+import { neon } from "@neondatabase/serverless";
 
 export async function GET() {
   try {
-    // Increment the 'portfolio_visits' key by 1 in Vercel KV
-    const count = await kv.incr("portfolio_visits");
-    
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is missing");
+    }
+    const sql = neon(process.env.DATABASE_URL);
+
+    // Create table if it doesn't exist
+    await sql`
+      CREATE TABLE IF NOT EXISTS site_stats (
+        key VARCHAR(255) PRIMARY KEY,
+        value INTEGER DEFAULT 0
+      )
+    `;
+
+    // Increment the visit counter atomically
+    const result = await sql`
+      INSERT INTO site_stats (key, value) 
+      VALUES ('portfolio_visits', 1)
+      ON CONFLICT (key) 
+      DO UPDATE SET value = site_stats.value + 1
+      RETURNING value
+    `;
+
+    const count = result[0].value;
     return NextResponse.json({ count });
   } catch (error) {
-    console.error("Error connecting to Vercel KV", error);
-    // Return a fallback count if KV fails
+    console.error("Error connecting to Neon Database:", error);
     return NextResponse.json({ count: 0 }, { status: 500 });
   }
 }
