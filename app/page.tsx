@@ -70,7 +70,7 @@ const RESUME = {
   },
   experience: [
     {
-      company: "SettleMint India", role: "Full Stack Developer", period: "Jan 2023 – Present", location: "New Delhi",
+      company: "Quadcentrix (SettleMint India)", role: "Full Stack Developer", period: "Jan 2023 – Present", location: "New Delhi",
       highlights: [
         "Boosted development speed by 30% through workflow optimization",
         "Integrated ERC-20 & ERC-1155 smart contracts into Next.js apps",
@@ -103,16 +103,16 @@ const RESUME = {
     { name: "Stablecoin Management", tech: ["Next.js", "PostgreSQL", "Hasura", "Subgraph", "Blockchain", "Node.js", "Metamask", "Polygon ID"], desc: "Full stablecoin platform — operator management, lazy mint, fee controls, supply management, pause/unpause, user buy/redeem/transfer.", icon: "Wallet", color: "#f59e0b" },
     { name: "Tokenized Share Application", tech: ["Next.js", "Blockchain", "NestJS", "PostgreSQL", "Metamask", "NextAuth", "NFT"], desc: "Companies register & create digital shares on blockchain. Users login via Metamask, view shares, validate on OpenSea.", icon: "Blocks", color: "#ec4899" },
     { name: "Jharkhand Govt. Projects", tech: ["Next.js", "Express.js", "MySQL", "AWS"], desc: "Fisheries, Seed & PDMC portals — supply chain for farmers to apply for schemes with role-based workflows and work orders.", icon: "Tractor", color: "#10b981" },
-    { name: "Career Conversation (RAG)", tech: ["Next.js", "FastAPI", "LLM", "OpenAI", "RAG"], desc: "Digital version of me — users ask natural language questions about my career. Push notifications for connection requests.", icon: "MessageSquare", color: "#6366f1" },
-    { name: "Legal Auditor (LegalShield AI)", tech: ["HTML/CSS/JS", "FastAPI", "MySQL", "GenAI", "LLM", "Vector DB", "LlamaIndex", "Ollama", "Stripe"], desc: "Privacy-first SaaS for legal document audits & AI chat. Multi-tenant RAG with zero data leakage. Stripe billing integrated.", icon: "FileText", color: "#8b5cf6" },
-    { name: "SupportSim AI", tech: ["Next.js", "FastAPI", "MySQL", "GenAI", "LLM", "Vector DB", "LlamaIndex", "Ollama", "Stripe", "Kafka"], desc: "Customer Support Training Simulator — AI-driven roleplay with emotionally responsive customers. Multi-agent system with automated coaching.", icon: "Headphones", color: "#06b6d4" },
-    { name: "Email Classification Agent", tech: ["Next.js", "FastAPI", "OAuth", "LangGraph", "LangSmith", "PostgreSQL", "SMTP"], desc: "Auto-classifies emails (HR/Delivery/Engineering), sentiment analysis with HuggingFace, summarization, TTS, STT, AI response generation.", icon: "Mail", color: "#f59e0b" },
-    { name: "MCP Voice Assistant", tech: ["Next.js", "FastAPI", "MCP", "OpenAI Agents", "SQLite", "AWS"], desc: "Agentic chatbot with 8 MCPs — file system, Playwright automation, semantic scholar, time/location, task management, trade server, AI search, voice.", icon: "Cpu", color: "#ec4899" },
-    { name: "Engineering Team (CrewAI)", tech: ["Next.js", "FastAPI", "CrewAI", "OpenAI", "OpenRouter", "Ollama", "AWS", "Docker"], desc: "Autonomous multi-agent team that plans architecture, writes code, tests end-to-end. Docker-based isolated code execution with automated QA.", icon: "Terminal", color: "#10b981" },
-    { name: "Deep Research Agent", tech: ["Next.js", "FastAPI", "CrewAI", "OpenAI", "OpenRouter", "Ollama", "AWS"], desc: "Intelligent query decomposition, multi-model research (GPT-4o, Llama3, OpenRouter), structured report generation with automated email delivery.", icon: "Search", color: "#6366f1" },
-    { name: "LangGraph Chatbot", tech: ["Next.js", "FastAPI", "LangGraph", "AWS", "LangSmith"], desc: "Real tools integration — emails, OCR, Telegram, web search, Wikipedia, PDF generation. Multi-user, SQL memory, parallel threads, token tracking.", icon: "Bot", color: "#8b5cf6" },
-    { name: "Medical Healthcare AI", tech: ["Next.js", "FastAPI", "AWS", "OpenAI Agents", "LLM", "SMTP"], desc: "Medical report analysis, patient-specialist matching, email summaries, clinic management dashboard, bulk doctor upload, pathology reports.", icon: "Stethoscope", color: "#06b6d4" },
-    { name: "RAG Notebook", tech: ["Next.js", "OpenAI", "PostgreSQL (pgvector)", "Prisma", "Docker"], desc: "Chat with documents — PDF, Word, text, web pages. Semantic search with vector embeddings. Clerk auth, real-time progress tracking.", icon: "BookOpen", color: "#f59e0b" },
+    { name: "Career Conversation (RAG)", tech: ["Next.js", "FastAPI", "LLM", "OpenAI", "RAG"], desc: "Digital version of me — users ask natural language questions about my career. Push notifications for connection requests.", icon: "MessageSquare", color: "#6366f1", github: "https://github.com/jyotiprakash-m/adv-chunking", frontend: "https://github.com/jyotiprakash-m/jyoti-resume", demo: "https://youtu.be/vLkxvYlqDzI" },
+    { name: "Legal Auditor (LegalShield AI)", tech: ["HTML/CSS/JS", "FastAPI", "MySQL", "GenAI", "LLM", "Vector DB", "LlamaIndex", "Ollama", "Stripe"], desc: "Privacy-first SaaS for legal document audits & AI chat. Multi-tenant RAG with zero data leakage. Stripe billing integrated.", icon: "FileText", color: "#8b5cf6", github: "https://github.com/jyotiprakash-m/0_doller_architecture_projects/tree/main/legal-auditor", demo: "https://youtu.be/Mr1XVCNv1Sk" },
+    { name: "SupportSim AI", tech: ["Next.js", "FastAPI", "MySQL", "GenAI", "LLM", "Vector DB", "LlamaIndex", "Ollama", "Stripe", "Kafka"], desc: "Customer Support Training Simulator — AI-driven roleplay with emotionally responsive customers. Multi-agent system with automated coaching.", icon: "Headphones", color: "#06b6d4", github: "https://github.com/jyotiprakash-m/0_doller_architecture_projects/tree/main/customer-support", demo: "https://youtu.be/9s861RY1XFQ" },
+    { name: "Email Classification Agent", tech: ["Next.js", "FastAPI", "OAuth", "LangGraph", "LangSmith", "PostgreSQL", "SMTP"], desc: "Auto-classifies emails (HR/Delivery/Engineering), sentiment analysis with HuggingFace, summarization, TTS, STT, AI response generation.", icon: "Mail", color: "#f59e0b", github: "https://github.com/jyotiprakash-m/email-classification", frontend: "https://github.com/jyotiprakash-m/ai-monk" },
+    { name: "MCP Voice Assistant", tech: ["Next.js", "FastAPI", "MCP", "OpenAI Agents", "SQLite", "AWS"], desc: "Agentic chatbot with 8 MCPs — file system, Playwright automation, semantic scholar, time/location, task management, trade server, AI search, voice.", icon: "Cpu", color: "#ec4899", github: "https://github.com/jyotiprakash-m/mcp-based-projects", frontend: "https://github.com/jyotiprakash-m/jyoti-resume", demo: "https://youtu.be/jZFsulCfREw" },
+    { name: "Engineering Team (CrewAI)", tech: ["Next.js", "FastAPI", "CrewAI", "OpenAI", "OpenRouter", "Ollama", "AWS", "Docker"], desc: "Autonomous multi-agent team that plans architecture, writes code, tests end-to-end. Docker-based isolated code execution with automated QA.", icon: "Terminal", color: "#10b981", github: "https://github.com/jyotiprakash-m/crewai_engineering_team", frontend: "https://github.com/jyotiprakash-m/jyoti-resume", demo: "https://youtu.be/BARSbcWvYyg" },
+    { name: "Deep Research Agent", tech: ["Next.js", "FastAPI", "CrewAI", "OpenAI", "OpenRouter", "Ollama", "AWS"], desc: "Intelligent query decomposition, multi-model research (GPT-4o, Llama3, OpenRouter), structured report generation with automated email delivery.", icon: "Search", color: "#6366f1", github: "https://github.com/jyotiprakash-m/adv-chunking", frontend: "https://github.com/jyotiprakash-m/jyoti-resume", demo: "https://youtu.be/G_pieTtXfJ0" },
+    { name: "LangGraph Chatbot", tech: ["Next.js", "FastAPI", "LangGraph", "AWS", "LangSmith"], desc: "Real tools integration — emails, OCR, Telegram, web search, Wikipedia, PDF generation. Multi-user, SQL memory, parallel threads, token tracking.", icon: "Bot", color: "#8b5cf6", github: "https://github.com/jyotiprakash-m/langgraph-agentic-app", frontend: "https://github.com/jyotiprakash-m/jyoti-resume", demo: "https://youtu.be/MuSiBohx6kk" },
+    { name: "Medical Healthcare AI", tech: ["Next.js", "FastAPI", "AWS", "OpenAI Agents", "LLM", "SMTP"], desc: "Medical report analysis, patient-specialist matching, email summaries, clinic management dashboard, bulk doctor upload, pathology reports.", icon: "Stethoscope", color: "#06b6d4", github: "https://github.com/jyotiprakash-m/adv-chunking/tree/master/routers/healthcare_assistant", frontend: "https://github.com/jyotiprakash-m/jyoti-resume", demo: "https://youtu.be/zhOWXmv9-L0" },
+    { name: "RAG Notebook", tech: ["Next.js", "OpenAI", "PostgreSQL (pgvector)", "Prisma", "Docker"], desc: "Chat with documents — PDF, Word, text, web pages. Semantic search with vector embeddings. Clerk auth, real-time progress tracking.", icon: "BookOpen", color: "#f59e0b", github: "https://github.com/jyotiprakash-m/inquiro-documet-web-vector-search" },
   ],
 };
 
@@ -270,6 +270,7 @@ function HeroSection() {
         <div className="flex flex-wrap justify-center gap-4 mb-12">
           <a href="#projects" className="group px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all duration-300 hover:scale-105">View Projects<ChevronDown className="inline-block w-4 h-4 ml-2 group-hover:translate-y-1 transition-transform" /></a>
           <a href="#contact" className="px-8 py-4 rounded-xl border border-white/20 text-white font-semibold hover:bg-white/5 hover:border-white/40 transition-all duration-300 hover:scale-105">Get In Touch</a>
+          <a href="/jyot_resume.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-8 py-4 rounded-xl border border-indigo-500/30 text-indigo-300 font-semibold hover:bg-indigo-500/10 hover:border-indigo-500/50 transition-all duration-300 hover:scale-105"><FileText className="w-5 h-5" />View Resume</a>
         </div>
         <div className="flex flex-wrap justify-center gap-6 text-slate-400">
           <a href={`mailto:${RESUME.email}`} className="flex items-center gap-2 hover:text-indigo-400 transition-colors"><Mail className="w-4 h-4" /><span className="text-sm">{RESUME.email}</span></a>
@@ -511,7 +512,27 @@ function ProjectsSection() {
             <div className="flex items-center gap-3 mb-4"><div className="p-3 rounded-xl" style={{ backgroundColor: `${project.color}15`, border: `1px solid ${project.color}30` }}><IconComp className="w-6 h-6" style={{ color: project.color }} /></div><h3 className="text-lg font-bold text-white">{project.name}</h3></div>
             <p className="text-slate-400 text-sm mb-4 flex-grow">{project.desc}</p>
             <div className="flex flex-wrap gap-1.5 mb-4">{project.tech.slice(0, 5).map((t) => <span key={t} className="px-2 py-0.5 rounded-md text-xs bg-white/5 text-slate-400 border border-white/5">{t}</span>)}{project.tech.length > 5 && <span className="px-2 py-0.5 rounded-md text-xs text-slate-500">+{project.tech.length - 5}</span>}</div>
-            <div className="flex gap-2"><button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-all"><Code2 className="w-4 h-4" />Code</button><button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600/80 to-violet-600/80 text-sm text-white hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all"><ExternalLink className="w-4 h-4" />Demo</button></div>
+            <div className="flex gap-2">
+              {((project as any).github || (project as any).frontend) && (
+                <div className="flex flex-1 gap-2">
+                  {(project as any).github && (
+                    <a href={(project as any).github} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition-all">
+                      <Code2 className="w-3.5 h-3.5" />{(project as any).frontend ? "Backend" : "Code"}
+                    </a>
+                  )}
+                  {(project as any).frontend && (
+                    <a href={(project as any).frontend} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition-all">
+                      <Code2 className="w-3.5 h-3.5" />Frontend
+                    </a>
+                  )}
+                </div>
+              )}
+              {(project as any).demo && (
+                <a href={(project as any).demo} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-600/80 to-violet-600/80 text-xs text-white hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all">
+                  <ExternalLink className="w-3.5 h-3.5" />Demo
+                </a>
+              )}
+            </div>
           </GlassCard></TiltCard>; })}
         </div>
       </div>
