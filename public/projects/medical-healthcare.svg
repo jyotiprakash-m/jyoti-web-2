@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1020"/>
+      <stop offset="100%" stop-color="#090b16"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <circle cx="140" cy="120" r="150" fill="#14b8a6" opacity="0.10"/>
+  <circle cx="700" cy="360" r="170" fill="#0ea5e9" opacity="0.12"/>
+  <rect x="50" y="70" width="700" height="310" rx="20" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.10"/>
+  <rect x="90" y="120" width="70" height="6" rx="3" fill="url(#accent)"/>
+  <text x="90" y="200" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="white">Medical Healthcare AI</text>
+  <text x="90" y="245" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="22" fill="white" fill-opacity="0.65">Reports · specialists · clinics</text>
+  <g transform="translate(600,160)">
+  <rect x="55" y="0" width="60" height="170" rx="14" fill="#14b8a6" opacity="0.92"/>
+  <rect x="0" y="55" width="170" height="60" rx="14" fill="#0ea5e9" opacity="0.92"/>
+</g>
+</svg>

@@ -270,7 +270,7 @@ function HeroSection() {
         <div className="flex flex-wrap justify-center gap-4 mb-12">
           <a href="#projects" className="group px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all duration-300 hover:scale-105">View Projects<ChevronDown className="inline-block w-4 h-4 ml-2 group-hover:translate-y-1 transition-transform" /></a>
           <a href="#contact" className="px-8 py-4 rounded-xl border border-white/20 text-white font-semibold hover:bg-white/5 hover:border-white/40 transition-all duration-300 hover:scale-105">Get In Touch</a>
-          <a href="/jyot_resume.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-8 py-4 rounded-xl border border-indigo-500/30 text-indigo-300 font-semibold hover:bg-indigo-500/10 hover:border-indigo-500/50 transition-all duration-300 hover:scale-105"><FileText className="w-5 h-5" />View Resume</a>
+          <a href="/jyoti_4yr_updated.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-8 py-4 rounded-xl border border-indigo-500/30 text-indigo-300 font-semibold hover:bg-indigo-500/10 hover:border-indigo-500/50 transition-all duration-300 hover:scale-105"><FileText className="w-5 h-5" />View Resume</a>
         </div>
         <div className="flex flex-wrap justify-center gap-6 text-slate-400">
           <a href={`mailto:${RESUME.email}`} className="flex items-center gap-2 hover:text-indigo-400 transition-colors"><Mail className="w-4 h-4" /><span className="text-sm">{RESUME.email}</span></a>

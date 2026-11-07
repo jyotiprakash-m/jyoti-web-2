@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1b2a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a1628;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="450" fill="url(#bg)"/>
+
+  <!-- Ambient glow circles -->
+  <circle cx="150" cy="200" r="120" fill="#06b6d4" opacity="0.05"/>
+  <circle cx="650" cy="300" r="100" fill="#0891b2" opacity="0.05"/>
+
+  <!-- Glass card -->
+  <rect x="60" y="80" width="680" height="290" rx="16" fill="white" fill-opacity="0.04" stroke="white" stroke-opacity="0.08" stroke-width="1"/>
+
+  <!-- Headphones icon (center-left) -->
+  <g transform="translate(140, 180)" filter="url(#glow)">
+    <circle cx="0" cy="0" r="40" fill="#06b6d4" fill-opacity="0.15" stroke="#06b6d4" stroke-opacity="0.3" stroke-width="1"/>
+    <!-- Headphone arc -->
+    <path d="M -18 0 A 18 18 0 0 1 18 0" stroke="#06b6d4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Left ear cup -->
+    <rect x="-24" y="-2" width="10" height="14" rx="4" fill="#06b6d4" opacity="0.8"/>
+    <!-- Right ear cup -->
+    <rect x="14" y="-2" width="10" height="14" rx="4" fill="#06b6d4" opacity="0.8"/>
+  </g>
+
+  <!-- Chat bubbles (right side) -->
+  <rect x="220" y="110" width="180" height="36" rx="18" fill="#06b6d4" fill-opacity="0.15" stroke="#06b6d4" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="310" y="133" font-family="system-ui,sans-serif" font-size="11" fill="#67e8f9" text-anchor="middle">Customer message...</text>
+
+  <rect x="250" y="160" width="200" height="36" rx="18" fill="white" fill-opacity="0.06" stroke="white" stroke-opacity="0.12" stroke-width="1"/>
+  <text x="350" y="183" font-family="system-ui,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)" text-anchor="middle">AI response generating...</text>
+
+  <rect x="220" y="210" width="160" height="36" rx="18" fill="#06b6d4" fill-opacity="0.15" stroke="#06b6d4" stroke-opacity="0.25" stroke-width="1"/>
+  <text x="300" y="233" font-family="system-ui,sans-serif" font-size="11" fill="#67e8f9" text-anchor="middle">Follow-up query...</text>
+
+  <!-- Agent nodes (right) -->
+  <circle cx="560" cy="150" r="22" fill="white" fill-opacity="0.04" stroke="#06b6d4" stroke-opacity="0.3" stroke-width="1.5"/>
+  <text x="560" y="156" font-family="system-ui,sans-serif" font-size="14" fill="#67e8f9" text-anchor="middle">🤖</text>
+  <circle cx="620" cy="210" r="18" fill="white" fill-opacity="0.04" stroke="#06b6d4" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="620" y="216" font-family="system-ui,sans-serif" font-size="12" fill="#67e8f9" text-anchor="middle">🧠</text>
+  <circle cx="560" cy="270" r="20" fill="white" fill-opacity="0.04" stroke="#06b6d4" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="560" y="276" font-family="system-ui,sans-serif" font-size="12" fill="#67e8f9" text-anchor="middle">📊</text>
+
+  <!-- Connecting lines -->
+  <line x1="560" y1="172" x2="560" y2="250" stroke="#06b6d4" stroke-opacity="0.15" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="560" y1="172" x2="620" y2="192" stroke="#06b6d4" stroke-opacity="0.15" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- Title -->
+  <text x="400" y="330" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">SupportSim AI</text>
+  <text x="400" y="358" font-family="system-ui,sans-serif" font-size="13" fill="rgba(255,255,255,0.4)" text-anchor="middle">Customer Support Simulator</text>
+
+  <!-- Bottom accent bar -->
+  <rect x="60" y="390" width="680" height="2" rx="1" fill="url(#accent)" opacity="0.4"/>
+</svg>
+
