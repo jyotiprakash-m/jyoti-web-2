@@ -642,21 +642,46 @@ export default function PradipStyleDeskPage() {
     };
   }, []);
 
+  // One music player, ever: never two songs at once, and never a song that outlives the page.
   useEffect(() => {
+    // A previous player (hot reload, double mount) must never keep playing behind a new one.
+    const w = window as unknown as { __deskMusic?: HTMLAudioElement };
+    w.__deskMusic?.pause();
+
     const audio = new Audio();
+    w.__deskMusic = audio;
     audio.loop = true; // keeps playing the same track continuously
     audio.volume = 0.6;
     audio.preload = "none";
-    const onPlay = () => setIsPlaying(true);
+
+    // Other tabs/windows of this site: when one starts playing, the others pause.
+    const tabId = Math.random().toString(36).slice(2);
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("desk-music") : null;
+    channel?.addEventListener("message", (e) => {
+      if (e.data?.type === "playing" && e.data.id !== tabId) audio.pause();
+    });
+
+    const onPlay = () => {
+      setIsPlaying(true);
+      channel?.postMessage({ type: "playing", id: tabId });
+    };
     const onPause = () => setIsPlaying(false);
     audio.addEventListener("play", onPlay);
     audio.addEventListener("pause", onPause);
+    // Closing or leaving the page stops the music (also covers back/forward-cache restores).
+    const onPageHide = () => audio.pause();
+    window.addEventListener("pagehide", onPageHide);
+
     audioRef.current = audio;
     return () => {
+      window.removeEventListener("pagehide", onPageHide);
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("pause", onPause);
+      channel?.close();
       audio.pause();
       audio.removeAttribute("src");
+      audio.load(); // really abandons any download/playback in progress
+      if (w.__deskMusic === audio) delete w.__deskMusic;
       audioRef.current = null;
     };
   }, []);
@@ -667,7 +692,10 @@ export default function PradipStyleDeskPage() {
     const src = TRACKS[idx].src;
     if (!audio.src.endsWith(src)) audio.src = src;
     setTrackIdx(idx);
-    audio.play().catch(() => setIsPlaying(false)); // autoplay can be refused; the next tap will work
+    audio.play().catch((err: unknown) => {
+      // Skipping tracks quickly interrupts the previous play() with an AbortError: that is expected, not a failure.
+      if (!(err instanceof DOMException && err.name === "AbortError")) setIsPlaying(false);
+    });
   }, []);
 
   const toggleMusic = useCallback(() => {
