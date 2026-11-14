@@ -476,9 +476,14 @@ const HOVER_LABELS: Record<string, { title: string; hint: string }> = {
   tablet: { title: "Tablet", hint: "Skills, career & contact" },
   phone: { title: "Phone", hint: "Chat with my AI assistant" },
   notebook: { title: "Notebook", hint: "Sign the guestbook" },
+  resume: { title: "Resume", hint: "Open my CV (PDF)" },
   speaker: { title: "Speaker", hint: "Tap to play / pause" },
+  mug: { title: "Coffee", hint: "Take a sip (refills when empty)" },
+  plant: { title: "Jade plant", hint: "Click to water it" },
+  penstand: { title: "Pen stand", hint: "Pop a pen out" },
   lamp: { title: "Desk lamp", hint: "Tap to switch on / off" },
-  cat: { title: "Pikachu", hint: "Say hi" }
+  cat: { title: "Pikachu", hint: "Say hi" },
+  desk: { title: "Send Pikachu here", hint: "Double-click to make him run to this spot" }
 };
 
 // macOS-style blue folder with the project's cover image tucked inside, peeking out of the pocket
@@ -498,10 +503,84 @@ function FolderIcon({ image, alt, tag }: { image: string; alt: string; tag: stri
   );
 }
 
+// ─── Boot screen: shown from the very first paint until the 3D desk has drawn its first frame ───
+const BOOT_LINES = [
+  "$ bun run desk --env=production",
+  "› resolving dependencies … ok",
+  "› compiling shaders … ok",
+  "› placing laptop, tablet & phone … ok",
+  "› teaching Pikachu to avoid the mug … ok",
+  "› tuning the lo-fi speaker …",
+];
+
+function DeskLoader({ ready }: { ready: boolean }) {
+  const [shown, setShown] = useState(1);
+  const [minDone, setMinDone] = useState(false);
+  const [gone, setGone] = useState(false);
+  const leaving = ready && minDone; // keep it up briefly even on a fast load, so it never just flashes
+
+  useEffect(() => {
+    const lines = setInterval(() => setShown((n) => Math.min(BOOT_LINES.length, n + 1)), 420);
+    const min = setTimeout(() => setMinDone(true), 1300);
+    return () => {
+      clearInterval(lines);
+      clearTimeout(min);
+    };
+  }, []);
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => setGone(true), 650);
+    return () => clearTimeout(t);
+  }, [leaving]);
+
+  if (gone) return null;
+  const pct = leaving ? 100 : Math.round((shown / BOOT_LINES.length) * 88);
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label="Loading the desk"
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-[#0b0d12] px-4 transition-opacity duration-500 ${
+        leaving ? "pointer-events-none opacity-0" : "opacity-100"
+      }`}
+    >
+      <div className="w-full max-w-md overflow-hidden rounded-xl border border-white/10 bg-[#11141b] shadow-2xl">
+        <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+          <span className="ml-3 font-mono text-[11px] text-stone-500">jyoti@desk — zsh</span>
+        </div>
+        <div className="space-y-1 px-4 py-4 font-mono text-[12.5px] leading-relaxed text-stone-300">
+          {BOOT_LINES.slice(0, shown).map((line, i) => (
+            <p key={line} className={i === 0 ? "text-emerald-400" : undefined}>
+              {line}
+              {i === shown - 1 && !leaving && <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-stone-300" />}
+            </p>
+          ))}
+          {leaving && <p className="text-emerald-400">✓ desk ready</p>}
+          <div className="pt-3">
+            <div className="h-1 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-emerald-400 transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="mt-1.5 text-right text-[10px] text-stone-500">{pct}%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function PradipStyleDeskPage() {
   const [evening, setEvening] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
+  useEffect(() => {
+    // never trap the visitor behind the loader if WebGL is slow or unavailable
+    const t = setTimeout(() => setSceneReady(true), 15000);
+    return () => clearTimeout(t);
+  }, []);
   // null = follow evening mode (lamp on at night); true/false = visitor's manual choice until the mode changes
   const [lampOverride, setLampOverride] = useState<boolean | null>(null);
   const lampOn = lampOverride ?? evening;
@@ -823,6 +902,8 @@ export default function PradipStyleDeskPage() {
         evening ? "bg-[#1f1915] text-[#F3E9DA]" : "bg-[#F4F4F6] text-stone-900"
       }`}
     >
+      <DeskLoader ready={sceneReady} />
+
       {/* ─── DESK HERO SECTION ───────────────────────────────────────────────── */}
       <section
         ref={deskRef}
@@ -932,6 +1013,7 @@ export default function PradipStyleDeskPage() {
         <div className="absolute inset-0">
           <ThreeDesk
             evening={evening}
+            onReady={() => setSceneReady(true)}
             onSelectDevice={openDevice}
             setHoveredDevice={handleHoverDevice}
             speakerAnchorRef={speakerAnchorRef}
@@ -1099,6 +1181,8 @@ export default function PradipStyleDeskPage() {
                     ? "Tablet · Skills, Career & Contact"
                     : focusedDevice === "notebook"
                     ? "Notebook · Guestbook"
+                    : focusedDevice === "resume"
+                    ? "Resume · CV"
                     : "Phone · AI Chat & Quick Links"}
                 </strong>
               </span>
@@ -1925,6 +2009,43 @@ export default function PradipStyleDeskPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ── RESUME VIEW (the PDF, shown in-page) ── */}
+            {focusedDevice === "resume" && (
+              <div
+                className="flex w-full max-w-4xl flex-col animate-in zoom-in-95 duration-200"
+                style={{ height: "calc(100svh - 9.5rem)" }}
+              >
+                <div className="mb-3 flex items-center justify-between gap-3 text-white">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">Resume</p>
+                    <h3 className="text-lg font-semibold">Jyoti Prakash Mohanta</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={RESUME_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hidden rounded-full px-3 py-2 text-sm text-stone-300 underline-offset-4 hover:text-white hover:underline sm:inline-block"
+                    >
+                      Not loading? Open full PDF
+                    </a>
+                    <a
+                      href={RESUME_URL}
+                      download
+                      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white hover:text-stone-950"
+                    >
+                      Download PDF
+                    </a>
+                  </div>
+                </div>
+                <iframe
+                  src={`${RESUME_URL}#view=FitH&toolbar=0`}
+                  title="Resume PDF"
+                  className="w-full flex-1 rounded-xl bg-white shadow-2xl"
+                />
               </div>
             )}
 

@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
-export type DeskDevice = "laptop" | "tablet" | "phone" | "notebook";
+export type DeskDevice = "laptop" | "tablet" | "phone" | "notebook" | "resume";
 
 interface ThreeDeskProps {
   evening: boolean;
@@ -20,6 +20,8 @@ interface ThreeDeskProps {
   speakerAnchorRef?: React.RefObject<HTMLDivElement | null>;
   /** Half the anchored panel's width, so the anchor stays fully inside the viewport. */
   speakerAnchorHalfWidth?: number;
+  /** Called once, after the scene has drawn its first frame. */
+  onReady?: () => void;
 }
 
 export default function ThreeDesk({
@@ -33,7 +35,12 @@ export default function ThreeDesk({
   onLampToggle,
   speakerAnchorRef,
   speakerAnchorHalfWidth = 148,
+  onReady,
 }: ThreeDeskProps) {
+  const onReadyRef = useRef(onReady);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
   const mountRef = useRef<HTMLDivElement>(null);
   const eveningRef = useRef(evening);
   const focusedDeviceRef = useRef(focusedDevice);
@@ -1958,6 +1965,7 @@ export default function ThreeDesk({
     const flowerGroup = new THREE.Group();
     flowerGroup.position.set(3.7, 0.02, -1.15);
     flowerGroup.scale.setScalar(1.15);
+    flowerGroup.userData = { device: "plant" };
 
     const whiteCeramicMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f3, roughness: 0.55, metalness: 0, side: THREE.DoubleSide });
     const jadeStemMat = new THREE.MeshStandardMaterial({ color: 0x6b7a4a, roughness: 0.7 });
@@ -2054,6 +2062,117 @@ export default function ThreeDesk({
     });
 
     scene.add(flowerGroup);
+    flowerGroup.traverse((o) => o.type === "Mesh" && interactables.push(o));
+
+    // 4b. WATERING: click the plant → a watering can swings in, tilts and pours real falling droplets;
+    // the soil darkens and the plant perks up, then everything settles back
+    const waterCan = new THREE.Group();
+    waterCan.visible = false;
+    scene.add(waterCan);
+    const canMat = new THREE.MeshStandardMaterial({ color: 0xf2b632, roughness: 0.4, metalness: 0.5 });
+    const canBody = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.14, 0.2, 28), canMat);
+    canBody.castShadow = true;
+    waterCan.add(canBody);
+    const canWater = new THREE.Mesh(new THREE.CircleGeometry(0.12, 28), new THREE.MeshStandardMaterial({ color: 0x1b2a3a, roughness: 0.2 }));
+    canWater.rotation.x = -Math.PI / 2;
+    canWater.position.y = 0.101;
+    waterCan.add(canWater);
+    const canHandle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.012, 10, 24, Math.PI), canMat);
+    canHandle.rotation.z = Math.PI / 2;
+    canHandle.position.set(-0.13, 0, 0);
+    canHandle.castShadow = true;
+    waterCan.add(canHandle);
+    const canSpout = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.026, 0.3, 14), canMat);
+    canSpout.position.set(0.22, 0.035, 0);
+    canSpout.rotation.z = -0.955;
+    canSpout.castShadow = true;
+    waterCan.add(canSpout);
+    const canRose = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.026, 0.03, 18), canMat);
+    canRose.position.set(0.345, 0.13, 0);
+    canRose.rotation.z = -0.955;
+    waterCan.add(canRose);
+    const canTip = new THREE.Object3D();
+    canTip.position.set(0.36, 0.14, 0);
+    waterCan.add(canTip);
+
+    const dropGeo = new THREE.SphereGeometry(0.024, 10, 8);
+    const dropMat = new THREE.MeshStandardMaterial({ color: 0x7fd0ff, emissive: 0x2a8fd0, emissiveIntensity: 0.4, roughness: 0.1, transparent: true, opacity: 0.85 });
+    const drops = Array.from({ length: 70 }, () => {
+      const mesh = new THREE.Mesh(dropGeo, dropMat);
+      mesh.visible = false;
+      scene.add(mesh);
+      return { mesh, vel: new THREE.Vector3(), alive: false };
+    });
+    const soilMat = jadeSoil.material as THREE.MeshStandardMaterial;
+    const soilDry = new THREE.Color(0x2a1c12);
+    const soilWet = new THREE.Color(0x0e0803);
+    const SOIL_TOP_Y = 0.02 + 0.512 * 1.15;
+    const CAN_PX = 3.0;
+    const CAN_PY = 1.08;
+    const CAN_PZ = -0.55;
+    let waterT0 = -100;
+    let waterLast = 0;
+    let spawnAcc = 0;
+    let perk = 0;
+    let wet = 0;
+    const tipWorld = new THREE.Vector3();
+    const waterPlant = () => {
+      if (timer.getElapsed() - waterT0 < 5.2) return; // already watering
+      waterT0 = timer.getElapsed();
+    };
+    const ease = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+    const updateWater = (now: number) => {
+      const dt = Math.min(0.1, now - waterLast);
+      waterLast = now;
+      const u = now - waterT0;
+      const active = u >= 0 && u < 4.8;
+      let pouring = false;
+      if (active) {
+        const inK = ease(u / 0.7);
+        const outK = u > 4.0 ? ease((u - 4.0) / 0.7) : 0;
+        const k = inK * (1 - outK);
+        const tilt = u < 0.7 ? 0 : u < 1.3 ? ease((u - 0.7) / 0.6) * 0.85 : u < 3.3 ? 0.85 : 0.85 * (1 - ease((u - 3.3) / 0.7));
+        waterCan.visible = true;
+        waterCan.scale.setScalar(Math.max(0.01, k));
+        waterCan.position.set(CAN_PX - (1 - inK) * 0.9 - outK * 0.9, CAN_PY + (1 - inK) * 0.15 + outK * 0.15, CAN_PZ);
+        waterCan.rotation.z = -tilt;
+        pouring = u > 1.1 && u < 3.3;
+      } else if (waterCan.visible) {
+        waterCan.visible = false;
+      }
+      if (pouring) {
+        spawnAcc += dt * 55;
+        while (spawnAcc >= 1) {
+          spawnAcc -= 1;
+          const d = drops.find((q) => !q.alive);
+          if (!d) break;
+          waterCan.updateMatrixWorld(true);
+          canTip.getWorldPosition(tipWorld);
+          d.mesh.position.copy(tipWorld).add(new THREE.Vector3((Math.random() - 0.5) * 0.03, 0, (Math.random() - 0.5) * 0.03));
+          d.vel.set(0.4 + Math.random() * 0.1, -0.15, (-1.15 - tipWorld.z) * 1.6 + (Math.random() - 0.5) * 0.08); // arc towards the pot
+          d.alive = true;
+          d.mesh.visible = true;
+        }
+      }
+      for (const d of drops) {
+        if (!d.alive) continue;
+        d.vel.y -= 4 * dt;
+        d.mesh.position.addScaledVector(d.vel, dt);
+        const dx = d.mesh.position.x - 3.7;
+        const dz = d.mesh.position.z + 1.15;
+        if ((d.mesh.position.y < SOIL_TOP_Y && dx * dx + dz * dz < 0.45 * 0.45) || d.mesh.position.y < 0.03) {
+          d.alive = false;
+          d.mesh.visible = false;
+        }
+      }
+      // soil darkens while it is being watered, then dries out slowly; the plant perks up and sways
+      wet += ((pouring ? 1 : 0) - wet) * dt * (pouring ? 1.6 : 0.12);
+      perk += ((pouring ? 1 : 0) - perk) * dt * (pouring ? 3 : 1.2);
+      soilMat.color.copy(soilDry).lerp(soilWet, Math.min(1, wet * 1.2));
+      const sc = 1.15;
+      flowerGroup.scale.set(sc * (1 - 0.02 * perk), sc * (1 + 0.06 * perk), sc * (1 - 0.02 * perk));
+      flowerGroup.rotation.z = Math.sin(now * 7) * 0.018 * perk;
+    };
 
     // 5. STATEMENT COFFEE MUG: glossy sunset-gradient glaze with a dev-themed wraparound print,
     // yellow lip, white interior, sculpted handle and a latte-art coffee surface
@@ -2062,6 +2181,7 @@ export default function ThreeDesk({
     const MUG_H = 0.68;
     const mugGroup = new THREE.Group();
     mugGroup.position.set(MUG_X, 0, MUG_Z);
+    mugGroup.userData = { device: "mug" };
     scene.add(mugGroup);
 
     // Wraparound artwork (circumference : height ≈ 3 : 1, so shapes aren't stretched)
@@ -2273,21 +2393,188 @@ export default function ThreeDesk({
       scene.add(sprite);
       return { sprite, mat, phase: i / STEAM_COUNT, wisp: i % 3 };
     });
+    let steamBoost = 0; // extra steam right after a sip or a refill
     const updateSteam = (time: number, isEve: boolean) => {
       const col = isEve ? 0xe8e2d8 : 0x8a8f98;
       steamPuffs.forEach(({ sprite, mat, phase, wisp }) => {
         const t = (time * 0.22 + phase) % 1; // 0 → 1 over the puff's life
         const sway = Math.sin(time * 1.3 + wisp * 2.1 + t * 5) * 0.05 * t;
         sprite.position.set(
-          MUG_X + (wisp - 1) * 0.07 + sway,
-          0.7 + t * 0.55,
-          MUG_Z + Math.cos(time * 1.1 + wisp) * 0.03
+          mugGroup.position.x + (wisp - 1) * 0.07 + sway,
+          mugGroup.position.y + 0.7 + t * (0.55 + steamBoost * 0.25),
+          mugGroup.position.z + Math.cos(time * 1.1 + wisp) * 0.03
         );
-        const size = 0.08 + t * 0.2;
+        const size = (0.08 + t * 0.2) * (1 + steamBoost * 0.5);
         sprite.scale.set(size, size, 1);
-        mat.opacity = Math.sin(t * Math.PI) * (isEve ? 0.4 : 0.32);
+        mat.opacity = Math.sin(t * Math.PI) * (isEve ? 0.4 : 0.32) * (1 + steamBoost * 1.2);
         mat.color.setHex(col);
       });
+    };
+
+    // 5b. COFFEE INTERACTIONS: click the mug to take a sip (it lifts and tilts, the level drops, steam puffs and a
+    // little bubble appears); when it's nearly empty the next click refills it from a small carafe
+    interactables.push(mugWall, mugLip, mugInner, mugHandle, coffee, mugBottom);
+    const COFFEE_MIN_Y = 0.115;
+    const COFFEE_MAX_Y = MUG_H - 0.065;
+    let coffeeLevel = 1;
+    const setCoffee = (level: number) => {
+      coffeeLevel = Math.min(1, Math.max(0, level));
+      const y = COFFEE_MIN_Y + coffeeLevel * (COFFEE_MAX_Y - COFFEE_MIN_Y);
+      const r = (y < 0.1 ? 0.2 + ((y - 0.06) / 0.04) * 0.072 : 0.272 + ((y - 0.1) / 0.576) * 0.012) - 0.004; // follow the inner wall
+      coffee.position.y = y;
+      coffee.scale.set(r / 0.28, r / 0.28, 1);
+    };
+    // speech bubble sprite above the mug
+    const bubbleCanvas = document.createElement("canvas");
+    bubbleCanvas.width = 320;
+    bubbleCanvas.height = 128;
+    const bubbleTex = new THREE.CanvasTexture(bubbleCanvas);
+    bubbleTex.colorSpace = THREE.SRGBColorSpace;
+    const drawBubble = (text: string) => {
+      const c = bubbleCanvas.getContext("2d")!;
+      c.clearRect(0, 0, 320, 128);
+      c.fillStyle = "rgba(255,255,255,0.97)";
+      c.beginPath();
+      c.roundRect(10, 8, 300, 84, 30);
+      c.fill();
+      c.beginPath();
+      c.moveTo(140, 90);
+      c.lineTo(160, 120);
+      c.lineTo(180, 90);
+      c.fill();
+      c.fillStyle = "#2b2118";
+      c.font = "bold 40px sans-serif";
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText(text, 160, 52);
+      bubbleTex.needsUpdate = true;
+    };
+    const bubbleMat = new THREE.SpriteMaterial({ map: bubbleTex, transparent: true, opacity: 0, depthTest: false });
+    const bubble = new THREE.Sprite(bubbleMat);
+    bubble.scale.set(0.62, 0.25, 1);
+    bubble.renderOrder = 20;
+    scene.add(bubble);
+    const SIP_LINES = ["ahh \u2615", "so good!", "caffeine +1", "need this", "mmm, latte"];
+
+    // carafe used for refills (same trick as the watering can: swings in, tilts, pours real droplets)
+    const carafe = new THREE.Group();
+    carafe.visible = false;
+    scene.add(carafe);
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x4a3426, roughness: 0.1, transparent: true, opacity: 0.5, clearcoat: 1 });
+    const carafeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, 0.22, 24), glassMat);
+    carafeBody.castShadow = true;
+    carafe.add(carafeBody);
+    const carafeLiquid = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.095, 0.15, 24), new THREE.MeshStandardMaterial({ color: 0x3d2212, roughness: 0.2 }));
+    carafeLiquid.position.y = -0.035;
+    carafe.add(carafeLiquid);
+    const carafeLid = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.088, 0.03, 24), new THREE.MeshStandardMaterial({ color: 0x15151a, roughness: 0.5 }));
+    carafeLid.position.y = 0.125;
+    carafe.add(carafeLid);
+    const carafeHandle = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.011, 10, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0x15151a, roughness: 0.5 }));
+    carafeHandle.rotation.z = Math.PI / 2;
+    carafeHandle.position.set(-0.1, 0.01, 0);
+    carafe.add(carafeHandle);
+    const carafeSpout = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.03, 0.1, 14), glassMat);
+    carafeSpout.position.set(0.12, 0.1, 0);
+    carafeSpout.rotation.z = -1.0;
+    carafe.add(carafeSpout);
+    const carafeTip = new THREE.Object3D();
+    carafeTip.position.set(0.17, 0.15, 0);
+    carafe.add(carafeTip);
+    const coffeeDropGeo = new THREE.SphereGeometry(0.02, 10, 8);
+    const coffeeDropMat = new THREE.MeshStandardMaterial({ color: 0x4a2a14, roughness: 0.15 });
+    const coffeeDrops = Array.from({ length: 60 }, () => {
+      const mesh = new THREE.Mesh(coffeeDropGeo, coffeeDropMat);
+      mesh.visible = false;
+      scene.add(mesh);
+      return { mesh, vel: new THREE.Vector3(), alive: false };
+    });
+
+    type MugAnim = { kind: "sip" | "refill"; t0: number; from: number };
+    let mugAnim: MugAnim | null = null;
+    let mugLast = 0;
+    let coffeeSpawn = 0;
+    const carafeTipWorld = new THREE.Vector3();
+    const CARAFE_PX = 2.18;
+    const CARAFE_PY = 1.01;
+    const mugEase = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+    const interactMug = () => {
+      if (mugAnim) return;
+      const now = timer.getElapsed();
+      if (coffeeLevel <= 0.22) {
+        mugAnim = { kind: "refill", t0: now, from: coffeeLevel };
+        drawBubble("fresh brew!");
+      } else {
+        mugAnim = { kind: "sip", t0: now, from: coffeeLevel };
+        drawBubble(SIP_LINES[Math.floor(Math.random() * SIP_LINES.length)]);
+      }
+    };
+    const updateMug = (now: number) => {
+      const dt = Math.min(0.1, now - mugLast);
+      mugLast = now;
+      let pouring = false;
+      let bubbleOn = 0;
+      if (mugAnim) {
+        const u = now - mugAnim.t0;
+        if (mugAnim.kind === "sip") {
+          // lift and tilt towards the viewer (0–0.6), drink (0.6–1.3), set back down (1.3–1.9)
+          const up = mugEase(u / 0.6) * (1 - mugEase((u - 1.3) / 0.6));
+          mugGroup.position.set(MUG_X - 0.05 * up, 0.3 * up, MUG_Z + 0.32 * up);
+          mugGroup.rotation.x = 0.55 * up;
+          setCoffee(mugAnim.from - 0.28 * mugEase((u - 0.6) / 0.6));
+          steamBoost = u > 1.2 ? Math.max(steamBoost, 1) : steamBoost;
+          bubbleOn = u > 0.7 && u < 1.9 ? 1 : 0;
+          if (u >= 1.9) {
+            mugGroup.position.set(MUG_X, 0, MUG_Z);
+            mugGroup.rotation.x = 0;
+            mugAnim = null;
+          }
+        } else {
+          // carafe swings in (0–0.7), tilts and pours (0.7–3.4), leaves (3.8–4.5)
+          const inK = mugEase(u / 0.7);
+          const outK = u > 3.8 ? mugEase((u - 3.8) / 0.7) : 0;
+          const k = inK * (1 - outK);
+          const tilt = u < 0.6 ? 0 : u < 1.2 ? mugEase((u - 0.6) / 0.6) * 0.9 : u < 3.2 ? 0.9 : 0.9 * (1 - mugEase((u - 3.2) / 0.6));
+          carafe.visible = true;
+          carafe.scale.setScalar(Math.max(0.01, k));
+          carafe.position.set(CARAFE_PX - (1 - inK) * 0.9 - outK * 0.9, CARAFE_PY + (1 - inK) * 0.15 + outK * 0.15, MUG_Z);
+          carafe.rotation.z = -tilt;
+          pouring = u > 1.0 && u < 3.2;
+          setCoffee(mugAnim.from + (1 - mugAnim.from) * mugEase((u - 1.3) / 2.1));
+          if (pouring) steamBoost = Math.max(steamBoost, 0.8);
+          bubbleOn = u > 3.3 && u < 4.5 ? 1 : 0;
+          if (u >= 4.5) {
+            carafe.visible = false;
+            mugAnim = null;
+          }
+        }
+      }
+      if (pouring) {
+        coffeeSpawn += dt * 60;
+        while (coffeeSpawn >= 1) {
+          coffeeSpawn -= 1;
+          const d = coffeeDrops.find((q) => !q.alive);
+          if (!d) break;
+          carafe.updateMatrixWorld(true);
+          carafeTip.getWorldPosition(carafeTipWorld);
+          d.mesh.position.copy(carafeTipWorld).add(new THREE.Vector3((Math.random() - 0.5) * 0.01, 0, (Math.random() - 0.5) * 0.01));
+          d.vel.set(0.22 + Math.random() * 0.05, -0.1, (Math.random() - 0.5) * 0.03);
+          d.alive = true;
+          d.mesh.visible = true;
+        }
+      }
+      for (const d of coffeeDrops) {
+        if (!d.alive) continue;
+        d.vel.y -= 4 * dt;
+        d.mesh.position.addScaledVector(d.vel, dt);
+        if (d.mesh.position.y < coffee.position.y + 0.02 || d.mesh.position.y < 0.03) {
+          d.alive = false;
+          d.mesh.visible = false;
+        }
+      }
+      steamBoost += (0 - steamBoost) * Math.min(1, dt * 0.9);
+      bubble.position.set(mugGroup.position.x, 1.42 + mugGroup.position.y * 0.5, mugGroup.position.z + 0.15);
+      bubbleMat.opacity += (bubbleOn - bubbleMat.opacity) * Math.min(1, dt * 10);
     };
 
     // 6. MINIMALIST DESKTOP SUCCULENT PLANT (Organic Realism)
@@ -2431,6 +2718,79 @@ export default function ThreeDesk({
     notebookGroup.add(penGroup);
 
     scene.add(notebookGroup);
+
+    // 7b. RESUME PAPER: a printed page lying between the laptop and the phone; clicking opens the PDF
+    const resumeGroup = new THREE.Group();
+    resumeGroup.position.set(1.68, 0.02, 0.62);
+    resumeGroup.rotation.y = -0.32;
+    resumeGroup.userData = { device: "resume" };
+    const RP_W = 0.66;
+    const RP_D = 0.92;
+    const resumeTex = (() => {
+      const c = document.createElement("canvas");
+      c.width = 512;
+      c.height = 724;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#fbfaf6";
+      ctx.fillRect(0, 0, 512, 724);
+      // Header band + name
+      ctx.fillStyle = "#1f2430";
+      ctx.fillRect(0, 0, 512, 92);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 34px sans-serif";
+      ctx.fillText("Jyoti Prakash Mohanta", 28, 50);
+      ctx.fillStyle = "#c9ced9";
+      ctx.font = "17px sans-serif";
+      ctx.fillText("Full Stack AI Developer", 28, 76);
+      // Section headings with text-line placeholders
+      const section = (title: string, y: number, lines: number) => {
+        ctx.fillStyle = "#4f46e5";
+        ctx.font = "bold 17px sans-serif";
+        ctx.fillText(title, 28, y);
+        ctx.fillRect(28, y + 6, 456, 2);
+        ctx.fillStyle = "#8a8f9c";
+        for (let i = 0; i < lines; i++) {
+          const w = 456 - ((i * 53 + y) % 120);
+          ctx.fillRect(28, y + 24 + i * 17, w, 6);
+        }
+        return y + 24 + lines * 17 + 18;
+      };
+      let y = 128;
+      y = section("EXPERIENCE", y, 7);
+      y = section("PROJECTS", y, 8);
+      y = section("SKILLS", y, 4);
+      section("EDUCATION", y, 3);
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 8;
+      return t;
+    })();
+    const sheetMat = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.92 });
+    const underSheet = new THREE.Mesh(makeRoundedSlab(RP_W, RP_D, 0.004, 0.003, 0.002), sheetMat);
+    underSheet.position.set(0.02, 0.0015, 0.015);
+    underSheet.rotation.set(-Math.PI / 2, 0, 0); // slabs are built upright: lay it flat
+    underSheet.rotation.order = "YXZ";
+    underSheet.rotation.y = 0.05;
+    underSheet.castShadow = true;
+    underSheet.receiveShadow = true;
+    resumeGroup.add(underSheet);
+    const topSheet = new THREE.Mesh(makeRoundedSlab(RP_W, RP_D, 0.004, 0.003, 0.002), sheetMat);
+    topSheet.position.set(0, 0.0045, 0);
+    topSheet.rotation.x = -Math.PI / 2;
+    topSheet.castShadow = true;
+    topSheet.receiveShadow = true;
+    resumeGroup.add(topSheet);
+    // Printed face: a plane carries the texture (the slab's UVs aren't normalised)
+    const printed = new THREE.Mesh(
+      new THREE.PlaneGeometry(RP_W - 0.01, RP_D - 0.01),
+      new THREE.MeshStandardMaterial({ map: resumeTex, roughness: 0.88, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
+    );
+    printed.rotation.x = -Math.PI / 2;
+    printed.position.set(0, 0.0068, 0);
+    printed.receiveShadow = true;
+    resumeGroup.add(printed);
+    scene.add(resumeGroup);
+    interactables.push(underSheet, topSheet, printed);
 
     // 8. DIGITAL DESK CLOCK (live: shows the visitor's local time with a blinking colon)
     const clockGroup = new THREE.Group();
@@ -2675,6 +3035,7 @@ export default function ThreeDesk({
     standGroup.position.set(-1.65, 0.02, -0.95);
     standGroup.scale.setScalar(1.35);
     standGroup.rotation.y = 0.35;
+    standGroup.userData = { device: "penstand" };
     scene.add(standGroup);
 
     const meshStandCanvas = document.createElement("canvas");
@@ -2725,6 +3086,7 @@ export default function ThreeDesk({
     standGroup.add(penStandBase);
 
     // Writing tools, each a group whose origin is the bottom end, standing along +Y
+    const standTools: Array<{ tool: THREE.Group; basePos: THREE.Vector3; baseRot: THREE.Euler; up: THREE.Vector3 }> = [];
     const addTool = (build: (g: THREE.Group) => void, yaw: number, lean: number, ox: number, oz: number) => {
       const tool = new THREE.Group();
       build(tool);
@@ -2732,6 +3094,12 @@ export default function ThreeDesk({
       tool.rotation.order = "YXZ";
       tool.rotation.set(lean, yaw, 0);
       standGroup.add(tool);
+      standTools.push({
+        tool,
+        basePos: tool.position.clone(),
+        baseRot: tool.rotation.clone(),
+        up: new THREE.Vector3(0, 1, 0).applyEuler(tool.rotation),
+      });
     };
     const cyl = (parent: THREE.Object3D, rTop: number, rBot: number, h: number, y: number, mat: THREE.Material, seg = 14) => {
       const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg), mat);
@@ -2770,6 +3138,35 @@ export default function ThreeDesk({
     addTool(makePencil(0xff6a2a, 0.48), 2.8, 0.17, -0.03, 0.04);
     addTool(makePencil(0x7a3bff, 0.52), 0.9, 0.3, 0.0, 0.05);
     addTool(makeBrush, 4.3, 0.2, -0.02, -0.03);
+
+    // Click the stand: a random pen or pencil slides up out of the cup, wobbles, then drops back in
+    const penPops: Array<{ idx: number; t0: number }> = [];
+    const popPen = () => {
+      const busy = new Set(penPops.map((p) => p.idx));
+      const free = standTools.map((_, i) => i).filter((i) => !busy.has(i));
+      if (free.length === 0) return;
+      penPops.push({ idx: free[Math.floor(Math.random() * free.length)], t0: timer.getElapsed() });
+    };
+    const updatePens = (now: number) => {
+      for (let k = penPops.length - 1; k >= 0; k--) {
+        const { idx, t0 } = penPops[k];
+        const st = standTools[idx];
+        const u = (now - t0) / 1.9;
+        if (u >= 1) {
+          st.tool.position.copy(st.basePos);
+          st.tool.rotation.copy(st.baseRot);
+          penPops.splice(k, 1);
+          continue;
+        }
+        // rise (0–0.3), hold with a wobble (0.3–0.68), drop back (0.68–1)
+        const r = u < 0.3 ? 1 - Math.pow(1 - u / 0.3, 3) : u < 0.68 ? 1 : 1 - Math.pow((u - 0.68) / 0.32, 3);
+        st.tool.position.copy(st.basePos).addScaledVector(st.up, 0.2 * r);
+        const wob = Math.sin((now - t0) * 14) * 0.07 * r * (u > 0.25 && u < 0.7 ? 1 : 0.3);
+        st.tool.rotation.set(st.baseRot.x + wob, st.baseRot.y, st.baseRot.z + wob * 0.6);
+      }
+    };
+    interactables.push(standBody, penStandBase);
+    standTools.forEach(({ tool }) => tool.traverse((o) => o.type === "Mesh" && interactables.push(o)));
 
     // 9c. ARTICULATED DESK LAMP (left side): switches on in evening mode, off by day
     const lampGroup = new THREE.Group();
@@ -3133,8 +3530,10 @@ export default function ThreeDesk({
       [-3.4, -1.6, -0.55, 0.9], // tablet + stand
       [-2.0, -0.5, 0.95, 1.85], // notebook
     ];
+    const CAT_X_MAX = 4.8;
+    const CAT_Z_MAX = 2.75;
     const catBlocked = (x: number, z: number) => {
-      if (Math.abs(x) > 3.7 || Math.abs(z) > 2.55) return true; // stay on the desk and inside the camera's view
+      if (Math.abs(x) > CAT_X_MAX || Math.abs(z) > CAT_Z_MAX) return true; // stay on the desk (front to back) and inside the camera's view
       for (const [cx, cz, r] of catCircles) if (Math.hypot(x - cx, z - cz) < r + CAT_CLEARANCE) return true;
       for (const [x0, x1, z0, z1] of catRects)
         if (x > x0 - CAT_CLEARANCE && x < x1 + CAT_CLEARANCE && z > z0 - CAT_CLEARANCE && z < z1 + CAT_CLEARANCE) return true;
@@ -3317,6 +3716,171 @@ export default function ThreeDesk({
       }
     };
 
+    // ── Double-click on the desk: Pikachu runs to that spot, routing around everything in the way ──
+    const nearestFreePoint = (x: number, z: number): [number, number] | null => {
+      if (!catBlocked(x, z)) return [x, z];
+      let best: [number, number] | null = null;
+      let bd = Infinity;
+      for (let gx = -CAT_X_MAX; gx <= CAT_X_MAX; gx += 0.05) {
+        for (let gz = -CAT_Z_MAX; gz <= CAT_Z_MAX; gz += 0.05) {
+          const d = Math.hypot(gx - x, gz - z);
+          if (d < bd && !catBlocked(gx, gz)) {
+            bd = d;
+            best = [gx, gz];
+          }
+        }
+      }
+      return best;
+    };
+    // A* over a fine grid of the desk (8-way), then "string-pulled" so the route is a few straight legs
+    const GRID = 0.1;
+    const GX0 = -CAT_X_MAX;
+    const GZ0 = -CAT_Z_MAX;
+    const GW = Math.round((CAT_X_MAX * 2) / GRID) + 1;
+    const GH = Math.round((CAT_Z_MAX * 2) / GRID) + 1;
+    const gridFree: boolean[] = [];
+    for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) gridFree.push(!catBlocked(GX0 + i * GRID, GZ0 + j * GRID));
+    const findPath = (sx: number, sz: number, ex: number, ez: number): Array<[number, number]> | null => {
+      if (catLineClear(sx, sz, ex, ez)) return [[ex, ez]];
+      const toCell = (x: number, z: number): [number, number] => [
+        Math.min(GW - 1, Math.max(0, Math.round((x - GX0) / GRID))),
+        Math.min(GH - 1, Math.max(0, Math.round((z - GZ0) / GRID))),
+      ];
+      const [si, sj] = toCell(sx, sz);
+      const [ei, ej] = toCell(ex, ez);
+      const idx = (i: number, j: number) => j * GW + i;
+      const g = new Array<number>(GW * GH).fill(Infinity);
+      const prev = new Array<number>(GW * GH).fill(-1);
+      const closed = new Array<boolean>(GW * GH).fill(false);
+      const open: number[] = [idx(si, sj)];
+      g[idx(si, sj)] = 0;
+      const h = (i: number, j: number) => Math.hypot(i - ei, j - ej);
+      let found = false;
+      while (open.length > 0) {
+        let bi = 0;
+        for (let k = 1; k < open.length; k++) {
+          const a = open[k];
+          const b = open[bi];
+          if (g[a] + h(a % GW, Math.floor(a / GW)) < g[b] + h(b % GW, Math.floor(b / GW))) bi = k;
+        }
+        const cur = open.splice(bi, 1)[0];
+        if (closed[cur]) continue;
+        closed[cur] = true;
+        const ci = cur % GW;
+        const cj = Math.floor(cur / GW);
+        if (ci === ei && cj === ej) {
+          found = true;
+          break;
+        }
+        for (let dj = -1; dj <= 1; dj++) {
+          for (let di = -1; di <= 1; di++) {
+            if (!di && !dj) continue;
+            const ni = ci + di;
+            const nj = cj + dj;
+            if (ni < 0 || nj < 0 || ni >= GW || nj >= GH) continue;
+            const n = idx(ni, nj);
+            if (closed[n] || !gridFree[n]) continue;
+            if (di && dj && (!gridFree[idx(ci + di, cj)] || !gridFree[idx(ci, cj + dj)])) continue; // no corner cutting
+            const ng = g[cur] + Math.hypot(di, dj);
+            if (ng < g[n]) {
+              g[n] = ng;
+              prev[n] = cur;
+              open.push(n);
+            }
+          }
+        }
+      }
+      if (!found) return null;
+      const cells: Array<[number, number]> = [];
+      for (let at = idx(ei, ej); at !== -1; at = prev[at]) cells.unshift([GX0 + (at % GW) * GRID, GZ0 + Math.floor(at / GW) * GRID]);
+      cells[cells.length - 1] = [ex, ez];
+      // String-pull: from each anchor jump to the furthest cell still in a clear straight line
+      const out: Array<[number, number]> = [];
+      let ax = sx;
+      let az = sz;
+      let k = 0;
+      while (k < cells.length) {
+        let far = k;
+        for (let m = cells.length - 1; m > k; m--) {
+          if (catLineClear(ax, az, cells[m][0], cells[m][1])) {
+            far = m;
+            break;
+          }
+        }
+        out.push(cells[far]);
+        [ax, az] = cells[far];
+        k = far + 1;
+      }
+      return out;
+    };
+    const runTo = (wx: number, wz: number) => {
+      const target = nearestFreePoint(wx, wz);
+      if (!target) return;
+      const [tx, tz] = target;
+      const path = findPath(cat.x, cat.z, tx, tz);
+      if (!path) return;
+      cat.path = path;
+      [cat.tx, cat.tz] = path[0];
+      cat.state = "walk";
+      cat.gait = "trot";
+      cat.tripSpeed = 1.15;
+      cat.pauseUntil = 0;
+      cat.duration = 999;
+      cat.timer = 0;
+      marker.position.set(tx, 0.024, tz);
+      markerStart = timer.getElapsed();
+    };
+    // A ring that pulses on the desk where Pikachu is heading
+    const marker = new THREE.Mesh(
+      new THREE.RingGeometry(0.1, 0.13, 40),
+      new THREE.MeshBasicMaterial({ color: 0xffd93b, transparent: true, opacity: 0, depthWrite: false })
+    );
+    marker.rotation.x = -Math.PI / 2;
+    scene.add(marker);
+    let markerStart = -10;
+    // Hover preview: a soft ring on the free spot Pikachu would run to if you double-clicked here
+    const hoverRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.1, 0.14, 48),
+      new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0, depthWrite: false })
+    );
+    hoverRing.rotation.x = -Math.PI / 2;
+    hoverRing.position.y = 0.023;
+    scene.add(hoverRing);
+    const hoverDot = new THREE.Mesh(
+      new THREE.CircleGeometry(0.045, 24),
+      new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0, depthWrite: false })
+    );
+    hoverDot.rotation.x = -Math.PI / 2;
+    hoverDot.position.y = 0.0235;
+    scene.add(hoverDot);
+    let hoverTarget: [number, number] | null = null;
+    const hoverPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.02);
+    const hoverPoint = new THREE.Vector3();
+    // Nearest free grid cell (cheap spiral search over the precomputed grid)
+    const snapFree = (x: number, z: number): [number, number] | null => {
+      const ci = Math.round((x - GX0) / GRID);
+      const cj = Math.round((z - GZ0) / GRID);
+      let best: [number, number] | null = null;
+      let bd = Infinity;
+      for (let r = 0; r <= 14; r++) {
+        for (let dj = -r; dj <= r; dj++) {
+          for (let di = -r; di <= r; di++) {
+            if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
+            const i = ci + di;
+            const j = cj + dj;
+            if (i < 0 || j < 0 || i >= GW || j >= GH || !gridFree[j * GW + i]) continue;
+            const d = Math.hypot(di, dj);
+            if (d < bd) {
+              bd = d;
+              best = [GX0 + i * GRID, GZ0 + j * GRID];
+            }
+          }
+        }
+        if (best && bd <= r) break;
+      }
+      return best;
+    };
+
     // Pikachu's voice: the real recording in /public/music/pikachu.mp3, restarted on every click
     const pikaVoice = new Audio("/music/pikachu.mp3");
     pikaVoice.preload = "auto";
@@ -3340,6 +3904,13 @@ export default function ThreeDesk({
     const updateCat = (time: number) => {
       const dt = Math.min(0.1, time - lastCatTime);
       lastCatTime = time;
+      const mk = time - markerStart;
+      const markerMat = marker.material as THREE.MeshBasicMaterial;
+      if (mk >= 0 && mk < 1.6) {
+        const s = 1 + 0.45 * Math.sin(mk * 7);
+        marker.scale.setScalar(s);
+        markerMat.opacity = 0.9 * (1 - mk / 1.6);
+      } else markerMat.opacity = 0;
       cat.timer += dt;
       const st = cat.state;
       const walking = st === "walk";
@@ -3562,7 +4133,9 @@ export default function ThreeDesk({
     fitCamera();
     camera.position.copy(defaultCamPos); // snap on first frame instead of easing in from the unfitted pose
 
+    let mouseIsPointer = false; // touch has no hover, so no preview ring there
     const handlePointerMove = (e: MouseEvent) => {
+      mouseIsPointer = (e as PointerEvent).pointerType !== "touch";
       const rect = container.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -3573,6 +4146,7 @@ export default function ThreeDesk({
       }
     };
 
+    let clickTrail: Array<{ t: number; x: number; y: number }> = [];
     const handleClick = (e: MouseEvent) => {
       if (focusedDeviceRef.current) return;
       // Use the click's own coordinates: taps on touch screens don't always fire a preceding pointermove
@@ -3581,14 +4155,32 @@ export default function ThreeDesk({
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
       const hits = raycaster.intersectObjects(interactables, true);
+      // Double-click on empty desk → send Pikachu there
+      const now = performance.now();
+      const recent = clickTrail.filter((c) => now - c.t < 700 && Math.hypot(c.x - e.clientX, c.y - e.clientY) < 24);
+      clickTrail = [...recent, { t: now, x: e.clientX, y: e.clientY }];
+      if (hits.length === 0 && clickTrail.length >= 2) {
+        clickTrail = [];
+        const p = new THREE.Vector3();
+        if (
+          raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.02), p) &&
+          Math.abs(p.x) < CAT_X_MAX + 0.4 &&
+          Math.abs(p.z) < CAT_Z_MAX + 0.4 // only points on the desk itself
+        )
+          runTo(p.x, p.z);
+        return;
+      }
       if (hits.length > 0) {
         let obj: THREE.Object3D | null = hits[0].object;
         while (obj && !obj.userData?.device && obj.parent) {
           obj = obj.parent;
         }
         if (obj && obj.userData?.device) {
-          const dev = obj.userData.device as DeskDevice | "speaker" | "cat" | "lamp";
-          if (dev === "speaker") tapSpeaker();
+          const dev = obj.userData.device as DeskDevice | "speaker" | "cat" | "lamp" | "penstand" | "plant" | "mug";
+          if (dev === "mug") interactMug();
+          else if (dev === "plant") waterPlant();
+          else if (dev === "penstand") popPen();
+          else if (dev === "speaker") tapSpeaker();
           else if (dev === "lamp") onLampToggleRef.current?.();
           else if (dev === "cat") meow();
           else onSelectDeviceRef.current(dev);
@@ -3627,7 +4219,12 @@ export default function ThreeDesk({
     const animate = () => {
       reqId = requestAnimationFrame(animate);
       timer.update();
+      // A device view is open: the desk is hidden behind a blurred overlay, so stop re-drawing it.
+      // Rendering a moving WebGL canvas under backdrop-blur is what made scrolling in the views stutter.
+      if (focusedDeviceRef.current) return;
       const elapsed = timer.getElapsed();
+      updatePens(elapsed);
+      updateWater(elapsed);
 
       updateScreens();
 
@@ -3663,10 +4260,30 @@ export default function ThreeDesk({
             setHoveredDeviceRef.current(dev);
             container.style.cursor = "pointer";
           }
+          hoverTarget = null;
         } else {
-          setHoveredDeviceRef.current(null);
+          // Empty desk under a mouse pointer: preview where a double-click would send Pikachu
+          hoverTarget = null;
+          if (mouseIsPointer && raycaster.ray.intersectPlane(hoverPlane, hoverPoint)) {
+            if (Math.abs(hoverPoint.x) < CAT_X_MAX + 0.4 && Math.abs(hoverPoint.z) < CAT_Z_MAX + 0.4) hoverTarget = snapFree(hoverPoint.x, hoverPoint.z);
+          }
+          setHoveredDeviceRef.current(hoverTarget ? "desk" : null);
           container.style.cursor = "default";
         }
+      }
+      {
+        const ringMat = hoverRing.material as THREE.MeshBasicMaterial;
+        const dotMat = hoverDot.material as THREE.MeshBasicMaterial;
+        const want = hoverTarget && !focusedDeviceRef.current ? 1 : 0;
+        if (hoverTarget) {
+          hoverRing.position.x += (hoverTarget[0] - hoverRing.position.x) * 0.35;
+          hoverRing.position.z += (hoverTarget[1] - hoverRing.position.z) * 0.35;
+          hoverDot.position.x = hoverRing.position.x;
+          hoverDot.position.z = hoverRing.position.z;
+          hoverRing.scale.setScalar(1 + 0.08 * Math.sin(elapsed * 6));
+        }
+        ringMat.opacity += (want * 0.95 - ringMat.opacity) * 0.25;
+        dotMat.opacity += (want * 0.9 - dotMat.opacity) * 0.25;
       }
 
       const isEve = eveningRef.current;
@@ -3698,6 +4315,7 @@ export default function ThreeDesk({
         speakerGroup.scale.set(1, 1 + 0.015 * Math.max(0, Math.sin(elapsed * 5)), 1);
       }
       speakerLight.intensity += (speakerGlow - speakerLight.intensity) * 0.2;
+      updateMug(elapsed);
       updateSteam(elapsed, isEve);
       updateClock();
       updateCat(elapsed);
@@ -3720,8 +4338,13 @@ export default function ThreeDesk({
       }
 
       renderer.render(scene, camera);
+      if (!readyFired) {
+        readyFired = true;
+        onReadyRef.current?.();
+      }
     };
 
+    let readyFired = false;
     animate();
 
     return () => {
