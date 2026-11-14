@@ -3400,11 +3400,14 @@ export default function ThreeDesk({
       const elbow = new THREE.Group();
       elbow.position.y = -0.055;
       shoulder.add(elbow);
-      const fore = mk(new THREE.CylinderGeometry(0.016, 0.013, 0.05, 12), pikaYellow, elbow);
-      fore.position.y = -0.025;
+      // a ball at the elbow fills the wedge that opens on the outside of a bent joint, so the forearm never looks detached
+      const elbowBlob = mk(sph, pikaYellow, elbow);
+      elbowBlob.scale.setScalar(0.0185);
+      const fore = mk(new THREE.CylinderGeometry(0.016, 0.013, 0.056, 12), pikaYellow, elbow);
+      fore.position.y = -0.026;
       const hand = mk(sph, pikaYellow, elbow);
-      hand.scale.set(0.018, 0.02, 0.017);
-      hand.position.y = -0.055;
+      hand.scale.set(0.019, 0.021, 0.018);
+      hand.position.y = -0.056;
       torso.add(shoulder);
       return { shoulder, elbow };
     };
@@ -3594,13 +3597,18 @@ export default function ThreeDesk({
       return path;
     };
     const startNode = Math.max(0, CAT_NODES.findIndex(([x, z]) => x === 1.9 && z === 1.8));
-    type CatState = "walk" | "idle" | "sit" | "sleep" | "groom" | "stretch";
+    type CatState = "walk" | "idle" | "sit" | "sleep" | "groom" | "stretch" | "dance";
     const cat = {
       state: "sit" as CatState,
       timer: 0,
       duration: 4,
       node: startNode,
       path: [] as Array<[number, number]>, // waypoints still to visit on the current trip
+      danceMove: 0, // which dance move is playing (0 groove, 1 spin, 2 disco, 3 headbang, 4 wave, 5 shimmy, 6 robot)
+      moveT0: 0,
+      nextMove: 0,
+      wasDancing: false,
+      userRun: false, // true while running to a spot the visitor double-clicked (music doesn't interrupt that)
       x: CAT_NODES[startNode][0],
       z: CAT_NODES[startNode][1],
       tx: CAT_NODES[startNode][0],
@@ -3680,6 +3688,7 @@ export default function ThreeDesk({
       // Mostly a relaxed walk, sometimes a quick trot; both vary in speed trip to trip
       const trot = Math.random() < 0.3;
       cat.gait = trot ? "trot" : "walk";
+      cat.userRun = false;
       cat.tripSpeed = trot ? rand(0.85, 1.2) : rand(0.35, 0.6);
       cat.pauseUntil = 0;
       cat.duration = 999;
@@ -3688,6 +3697,12 @@ export default function ThreeDesk({
     };
     // After walking or an idle action: pick the next random behaviour
     const chooseNext = (time: number) => {
+      if (speakerPlayingRef.current) {
+        cat.state = "dance"; // music is on: keep dancing
+        cat.duration = 999;
+        cat.timer = 0;
+        return;
+      }
       const wasWalking = cat.state === "walk";
       cat.timer = 0;
       if (!wasWalking && Math.random() < 0.8 && startTrip()) return;
@@ -3823,6 +3838,7 @@ export default function ThreeDesk({
       [cat.tx, cat.tz] = path[0];
       cat.state = "walk";
       cat.gait = "trot";
+      cat.userRun = true;
       cat.tripSpeed = 1.15;
       cat.pauseUntil = 0;
       cat.duration = 999;
@@ -3912,12 +3928,44 @@ export default function ThreeDesk({
         markerMat.opacity = 0.9 * (1 - mk / 1.6);
       } else markerMat.opacity = 0;
       cat.timer += dt;
+      // Music on → dance (unless he's running to a spot you picked); music off → back to normal behaviour
+      const musicOn = speakerPlayingRef.current;
+      if (musicOn && cat.state !== "dance" && !(cat.state === "walk" && cat.userRun)) {
+        cat.state = "dance";
+        cat.duration = 999;
+        cat.timer = 0;
+      } else if (!musicOn && cat.state === "dance") {
+        chooseNext(time);
+      }
       const st = cat.state;
       const walking = st === "walk";
       const sitting = st === "sit";
       const sleeping = st === "sleep";
       const waving = st === "groom";
       const cheering = st === "stretch";
+      const dancing = st === "dance";
+      const BEAT = 4.2; // dance beat (rad/s): bounces about 1.3 times a second, close to lo-fi tempo
+      // The routine: a new move every few seconds, never the same one twice in a row
+      if (dancing && !cat.wasDancing) {
+        cat.danceMove = 0;
+        cat.moveT0 = time;
+        cat.nextMove = time + 4;
+      }
+      cat.wasDancing = dancing;
+      if (dancing && time > cat.nextMove) {
+        let m = cat.danceMove;
+        while (m === cat.danceMove) m = Math.floor(Math.random() * 7);
+        cat.danceMove = m;
+        cat.moveT0 = time;
+        cat.nextMove = time + rand(3.8, 6);
+      }
+      const mv = dancing ? cat.danceMove : 0;
+      const mt = time - cat.moveT0;
+      const hopFreq = mv === 3 ? BEAT * 2 : BEAT;
+      const hopAmp = mv === 1 ? 0.07 : mv === 3 ? 0.03 : mv === 5 ? 0.02 : mv === 6 ? 0.03 : 0.045;
+      const swayAmp = mv === 2 || mv === 4 ? 0.2 : mv === 5 ? 0.1 : mv === 6 ? 0 : mv === 3 ? 0.06 : 0.14;
+      const swayFreq = mv === 5 ? BEAT * 2.5 : BEAT * 0.5;
+      const twistAmp = mv === 5 ? 0.45 : mv === 6 ? 0 : mv === 3 ? 0.1 : 0.3;
 
       // ── Locomotion: eased speed, curved turns, occasional stop-and-look ──
       cat.targetSpeed = 0;
@@ -3959,22 +4007,32 @@ export default function ThreeDesk({
       const running = cat.gait === "trot" && walkBlend > 0.5;
       const sparking = time < cat.meowUntil;
 
+      if (dancing) {
+        const faceCam = Math.atan2(camera.position.x - cat.x, camera.position.z - cat.z); // face the audience
+        if (mv === 1) {
+          // spin: wind up, one full turn, then keep going with the arms up
+          const e = Math.min(1, Math.max(0, (mt - 0.3) / 1.4));
+          cat.heading = faceCam + Math.PI * 2 * (e * e * (3 - 2 * e));
+        } else {
+          cat.heading = lerpAngle(cat.heading, faceCam, Math.min(1, dt * 3));
+        }
+      }
       catGroup.position.set(cat.x, 0.02, cat.z);
       catGroup.rotation.y = cat.heading;
       catShadow.position.set(cat.x, 0.0207, cat.z);
       catShadow.rotation.z = -cat.heading;
 
       // ── Body: height, lean, waddle ──
-      const hop = cheering ? Math.abs(Math.sin(time * 6)) * 0.07 : sparking ? Math.abs(Math.sin(time * 18)) * 0.012 : 0;
-      const hipT = sitting ? 0.042 : sleeping ? 0.034 : cheering ? HIP_H - 0.02 : HIP_H;
+      const hop = dancing ? Math.abs(Math.sin(time * hopFreq)) * hopAmp : cheering ? Math.abs(Math.sin(time * 6)) * 0.07 : sparking ? Math.abs(Math.sin(time * 18)) * 0.012 : 0;
+      const hipT = sitting ? 0.042 : sleeping ? 0.034 : cheering ? HIP_H - 0.02 : dancing ? HIP_H - 0.025 : HIP_H;
       cat.lower += (hipT - cat.lower) * Math.min(1, dt * 6);
       const bob = walkBlend * Math.abs(Math.sin(sp)) * (running ? 0.016 : 0.01);
       bodyRoot.position.y = cat.lower + bob + hop;
-      bodyRoot.rotation.z = Math.sin(sp) * (running ? 0.05 : 0.07) * walkBlend; // side-to-side waddle
-      const leanT = sleeping ? 0.95 : sitting ? 0.06 : cheering ? -0.18 : walkBlend * (running ? 0.22 : 0.08);
+      bodyRoot.rotation.z = Math.sin(sp) * (running ? 0.05 : 0.07) * walkBlend + (dancing ? Math.sin(time * swayFreq) * swayAmp : 0); // waddle / dance sway
+      const leanT = sleeping ? 0.95 : sitting ? 0.06 : cheering ? -0.18 : dancing ? (mv === 3 ? 0.12 * Math.sin(time * BEAT * 2) : -0.06) : walkBlend * (running ? 0.22 : 0.08);
       cat.pitch += (leanT - cat.pitch) * Math.min(1, dt * 5);
       torso.rotation.x = cat.pitch;
-      torso.rotation.y = -Math.sin(sp) * 0.08 * walkBlend - cat.turn * 0.15;
+      torso.rotation.y = -Math.sin(sp) * 0.08 * walkBlend - cat.turn * 0.15 + (dancing ? Math.sin(time * swayFreq) * twistAmp : 0);
       const breathe = Math.sin(time * (sleeping ? 1.6 : 2.5)) * (sleeping ? 0.02 : 0.012);
       torso.scale.set(1 + breathe * 0.5, 1 + breathe, 1 + breathe * 0.5);
 
@@ -4001,7 +4059,8 @@ export default function ThreeDesk({
         }
         const pawZ = stanceZ * walkBlend;
         const hipH = bodyRoot.position.y; // hips above the desk; during a hop the legs stretch until they run out of reach
-        const pawY = -(hipH - 0.006) + lift * (running ? 0.05 : 0.04) * walkBlend;
+        const danceLift = dancing ? Math.max(0, Math.sin(time * BEAT * 0.5 + li * Math.PI)) * 0.035 : 0; // alternate foot taps
+        const pawY = -(hipH - 0.006) + lift * (running ? 0.05 : 0.04) * walkBlend + danceLift;
         const [ih, ik, ia] = solveLeg(leg, pawZ, pawY, foot * walkBlend);
         let th = ih;
         let tk = ik;
@@ -4026,6 +4085,48 @@ export default function ThreeDesk({
         if (running) sx += 0.5; // arms trail behind when running
         if (waving && ai === cat.groomLeg) {
           sx = -0.15; sz = side * 2.35; ez = side * (0.45 + Math.sin(time * 9) * 0.45);
+        } else if (dancing) {
+          const ph = Math.sin(time * BEAT * 0.5 + ai * Math.PI); // alternating phase for the two arms
+          const both = Math.sin(time * BEAT * 0.5); // same phase for both arms
+          if (mv === 0) {
+            // groove: arms pump up and down in turn
+            sx = -0.3 + ph * 0.25;
+            sz = side * (1.55 + ph * 0.85);
+            ez = side * ph * 0.35;
+          } else if (mv === 1) {
+            // spin: arms thrown up while turning, then waved overhead
+            sx = -0.2;
+            sz = side * (mt < 0.3 ? 0.4 : 2.5);
+            ez = side * Math.sin(time * BEAT) * 0.2;
+          } else if (mv === 2) {
+            // disco: one arm points to the sky, the other rests on the hip, then they swap
+            const up = both > 0 ? ai === 0 : ai === 1;
+            sx = up ? -0.2 : -0.1;
+            sz = up ? side * 2.25 : side * 0.35;
+            ez = up ? side * 0.1 : side * 1.1;
+          } else if (mv === 3) {
+            // headbang: arms hang and swing with the nod
+            sx = -0.5 + Math.sin(time * BEAT * 2 + ai * 1.2) * 0.4;
+            sz = side * 0.35;
+            ez = side * 0.5;
+          } else if (mv === 4) {
+            // wave: both arms up, swaying together
+            sx = -0.15;
+            sz = side * (2.05 + both * 0.45);
+            ez = side * both * 0.4;
+          } else if (mv === 5) {
+            // shimmy: elbows bent, shoulders shaking
+            sx = -0.9 + Math.sin(time * BEAT * 2.5 + ai * Math.PI) * 0.15;
+            sz = side * 0.75;
+            ez = side * (0.7 + Math.sin(time * BEAT * 2.5) * 0.25);
+          } else {
+            // robot: arms snap between poses on the beat
+            const q = Math.floor(time * 2.7 + ai * 2) % 4;
+            const pose = [[-1.4, 0.45], [-0.15, 1.6], [-1.4, 0.45], [-0.15, 2.4]][q];
+            sx = pose[0];
+            sz = side * pose[1];
+            ez = 0;
+          }
         } else if (cheering) {
           sx = -0.2; sz = side * 2.6; ez = side * Math.sin(time * 6) * 0.15;
         } else if (sitting) {
@@ -4052,6 +4153,12 @@ export default function ThreeDesk({
       if (walking) {
         yawT = Math.max(-0.7, Math.min(0.7, cat.turn * 0.7)) + (time < cat.pauseUntil && cat.lookCam ? Math.max(-0.8, Math.min(0.8, camYaw)) : 0);
         pitchHead = -cat.pitch * 0.8 + Math.sin(sp * 2) * 0.03 * walkBlend;
+      } else if (dancing) {
+        yawT = Math.sin(time * BEAT * 0.5) * 0.45;
+        pitchHead = -cat.pitch + Math.sin(time * BEAT) * 0.12; // head bob on the beat
+        if (mv === 3) pitchHead = -cat.pitch + Math.sin(time * BEAT * 2) * 0.4; // headbang
+        else if (mv === 6) yawT = (Math.floor(time * 2.7) % 2 ? 0.5 : -0.5) * 0.9; // robot head snaps
+        else if (mv === 1) yawT = 0;
       } else if (sleeping) {
         pitchHead = 0.2;
       } else if (waving || cheering) {
@@ -4063,7 +4170,7 @@ export default function ThreeDesk({
       }
       head.rotation.y += (yawT - head.rotation.y) * Math.min(1, dt * 5);
       head.rotation.x += (pitchHead - head.rotation.x) * Math.min(1, dt * 6);
-      head.rotation.z = sparking ? Math.sin(time * 25) * 0.04 : 0;
+      head.rotation.z = sparking ? Math.sin(time * 25) * 0.04 : dancing ? Math.sin(time * BEAT * 0.5) * 0.12 : 0;
 
       // ── Ears: alert, random twitches, droop when asleep ──
       if (time > cat.nextEarTwitch) {
@@ -4088,10 +4195,10 @@ export default function ThreeDesk({
         cat.nextTailFlick = time + rand(2.5, 8);
       }
       const flick = time < cat.tailFlickUntil ? Math.sin(time * 14) * 0.3 * (cat.tailFlickUntil - time) : 0;
-      const wagRate = sparking || cheering ? 11 : walking ? 2.4 : 1.4;
+      const wagRate = sparking || cheering ? 11 : dancing ? 8 : walking ? 2.4 : 1.4;
       const tailRestX = sleeping ? -1.15 : sitting ? -0.85 : -0.45 - walkBlend * 0.1;
       tailGroup.rotation.x += (tailRestX - tailGroup.rotation.x) * Math.min(1, dt * 4);
-      tailGroup.rotation.y = Math.sin(time * wagRate) * (sparking || cheering ? 0.4 : walking ? 0.16 : 0.1) + flick + (sleeping ? 0.7 : 0);
+      tailGroup.rotation.y = Math.sin(time * wagRate) * (sparking || cheering || dancing ? 0.4 : walking ? 0.16 : 0.1) + flick + (sleeping ? 0.7 : 0);
 
       // ── Cheeks spark when clicked ──
       const sparkAmt = sparking ? 0.5 + 0.5 * Math.sin(time * 40) : 0;
